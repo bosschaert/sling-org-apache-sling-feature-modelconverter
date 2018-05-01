@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.modelconverter.impl;
+package org.apache.sling.feature.modelconverter;
 
 import org.apache.sling.feature.Application;
 import org.apache.sling.feature.ArtifactId;

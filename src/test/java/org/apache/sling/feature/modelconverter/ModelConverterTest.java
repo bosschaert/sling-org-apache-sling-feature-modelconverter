@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.modelconverter.impl;
+package org.apache.sling.feature.modelconverter;
 
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
@@ -25,6 +25,8 @@ import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
+import org.apache.sling.feature.modelconverter.FeatureToProvisioning;
+import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
 import org.apache.sling.provisioning.model.Configuration;

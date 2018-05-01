@@ -18,6 +18,6 @@
  */
 
 @org.osgi.annotation.versioning.Version("0.1.0")
-package org.apache.sling.feature.modelconverter.impl;
+package org.apache.sling.feature.modelconverter;
 
 
