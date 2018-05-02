@@ -25,8 +25,6 @@ import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
-import org.apache.sling.feature.modelconverter.FeatureToProvisioning;
-import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
 import org.apache.sling.provisioning.model.Configuration;
@@ -65,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -190,6 +189,7 @@ public class ModelConverterTest {
 
         for (File f : generated) {
             String baseName = f.getName().substring(0, f.getName().length() - ".json".length());
+            assertFalse("File name cannot contain a colon", baseName.contains(":"));
             File genFile = new File(tempDir.toFile(), baseName + ".txt");
             allGenerateProvisioningModelFiles.add(genFile);
             FeatureToProvisioning.convert(f, genFile.getAbsolutePath(), artifactManager);

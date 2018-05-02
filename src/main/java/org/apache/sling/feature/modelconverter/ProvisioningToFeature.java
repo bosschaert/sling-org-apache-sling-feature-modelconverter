@@ -84,7 +84,7 @@ public class ProvisioningToFeature {
             if (id == null) {
                 id = f.getId().getArtifactId();
             }
-
+            id = id.replaceAll("[:]","");
             id = bareFileName + "_" + id;
 
             File outFile = new File(outDir, id + ".json");
