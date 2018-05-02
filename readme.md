@@ -1,3 +1,3 @@
-# Feature Model Resolver
+# Feature Model Converter
 
-The Feature Model Resolver can resolve features and pre-calculate the ideal order to start features. 
+The Model Converter can convert between the Sling Provisioning Model and the Sling Feature Model and back.
