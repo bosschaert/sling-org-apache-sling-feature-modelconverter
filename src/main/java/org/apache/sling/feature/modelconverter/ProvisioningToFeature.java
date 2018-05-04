@@ -70,17 +70,13 @@ public class ProvisioningToFeature {
 
     public static List<File> convert(File file, File outDir, Map<String, Object> options) {
         Model model = createModel(Collections.singletonList(file), null, true, false);
-        final List<org.apache.sling.feature.Feature> features = buildFeatures(model, options);
 
-        String bareFileName = file.getName();
-        int idx = bareFileName.lastIndexOf('.');
-        if (idx > 0) {
-            bareFileName = bareFileName.substring(0, idx);
-        }
+        String bareFileName = getBareFileName(file);
+        final List<org.apache.sling.feature.Feature> features = buildFeatures(model, bareFileName, options);
 
         List<File> files = new ArrayList<>();
         for (org.apache.sling.feature.Feature f : features) {
-            String id = f.getVariables().get("provisioning.model.name");
+            String id = f.getVariables().get(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE);
             if (id == null) {
                 id = f.getId().getArtifactId();
             }
@@ -108,7 +104,7 @@ public class ProvisioningToFeature {
 
             writeApplication(app, outputFile);
         } else {
-            final List<org.apache.sling.feature.Feature> features = buildFeatures(model, Collections.emptyMap());
+            final List<org.apache.sling.feature.Feature> features = buildFeatures(model, null, Collections.emptyMap());
             int index = 1;
             for(final org.apache.sling.feature.Feature feature : features) {
                 writeFeature(feature, outputFile, features.size() > 1 ? index : 0);
@@ -331,9 +327,6 @@ public class ProvisioningToFeature {
             Entry<String, String> entry = it.next();
             variables.put(entry.getKey(), entry.getValue());
         }
-        if (feature.getName().startsWith(":")) {
-            variables.put(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE, feature.getName());
-        }
 
         Extension cpExtension = extensions.getByName(FeatureConstants.EXTENSION_NAME_CONTENT_PACKAGES);
         for(final RunMode runMode : feature.getRunModes() ) {
@@ -448,7 +441,7 @@ public class ProvisioningToFeature {
     }
 
 
-    private static List<org.apache.sling.feature.Feature> buildFeatures(Model model, Map<String, Object> options) {
+    private static List<org.apache.sling.feature.Feature> buildFeatures(Model model, String bareFileName, Map<String, Object> options) {
         final List<org.apache.sling.feature.Feature> features = new ArrayList<>();
 
         String groupId = getOption(options, "groupId", "generated");
@@ -459,6 +452,11 @@ public class ProvisioningToFeature {
             String name = feature.getName();
             if ( name != null ) {
                 name = name.replaceAll("[:]", "");
+
+                if (!name.equals(bareFileName)) {
+                    name = bareFileName + "_" + name;
+                }
+
                 if ( feature.getVersion() != null ) {
                     idString = groupId + "/" + name + "/" + feature.getVersion();
                 } else {
@@ -471,9 +469,22 @@ public class ProvisioningToFeature {
             features.add(f);
 
             buildFromFeature(feature, f.getVariables(), f.getBundles(), f.getConfigurations(), f.getExtensions(), f.getFrameworkProperties());
+
+            if (!f.getId().getArtifactId().equals(feature.getName())) {
+                f.getVariables().put(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE, feature.getName());
+            }
         }
 
         return features;
+    }
+
+    private static String getBareFileName(File file) {
+        String bareFileName = file.getName();
+        int idx = bareFileName.lastIndexOf('.');
+        if (idx > 0) {
+            bareFileName = bareFileName.substring(0, idx);
+        }
+        return bareFileName;
     }
 
     @SuppressWarnings("unchecked")

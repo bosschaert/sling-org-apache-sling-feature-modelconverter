@@ -146,6 +146,16 @@ public class ModelConverterTest {
     }
 
     @Test
+    public void testSimple2ToProvModel() throws Exception {
+        testConvertToProvisioningModel("/simple2.json", "/simple2.txt");
+    }
+
+    @Test
+    public void testSimple2ToFeature() throws Exception {
+        testConvertToFeature("/simple2.txt", "/simple2.json");
+    }
+
+    @Test
     public void testProvModelRoundtripFolder() throws Exception {
         String dir = System.getProperty("test.prov.files.dir");
         File filesDir;

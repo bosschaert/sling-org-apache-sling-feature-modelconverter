@@ -1,0 +1,12 @@
+{
+  "id":"generated:simple2_something:1.0.0",
+  "variables":{
+    "provisioning.model.name":"something"
+  },
+  "bundles":[
+    {
+      "id":"org.apache.aries:org.apache.aries.util:1.1.3",
+      "start-level":"20"
+    }
+  ]
+}
