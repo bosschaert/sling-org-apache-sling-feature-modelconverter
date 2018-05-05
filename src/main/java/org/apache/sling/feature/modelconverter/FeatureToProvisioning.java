@@ -27,10 +27,7 @@ import org.apache.sling.feature.FeatureConstants;
 import org.apache.sling.feature.KeyValueMap;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.feature.io.json.ApplicationJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
-import org.apache.sling.feature.resolver.ApplicationResolverAssembler;
-import org.apache.sling.feature.resolver.FeatureResolver;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.Configuration;
 import org.apache.sling.provisioning.model.Feature;
@@ -41,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -79,6 +75,7 @@ public class FeatureToProvisioning {
         convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(), feature.getFrameworkProperties(), feature.getExtensions(), output);
     }
 
+    /*
     public static void convert(List<File> files, String output, boolean createApp, ArtifactManager am) throws Exception {
         try (FeatureResolver fr = null) { // TODO we could use the resolver: new FrameworkResolver(am)
             if ( createApp ) {
@@ -99,6 +96,7 @@ public class FeatureToProvisioning {
             }
         }
     }
+    */
 
     private static void convert(final Application app, final int index, final String outputFile) {
         String featureName;

@@ -194,7 +194,8 @@ public class Main {
                 output = createApp ? "application.txt" : "feature.txt";
             }
             try {
-                FeatureToProvisioning.convert(files, output, createApp, am);
+                throw new IOException("Not yet supported");
+                // FeatureToProvisioning.convert(files, output, createApp, am);
             } catch ( final IOException ioe) {
                 LOGGER.error("Unable to read feature/application files " + ioe.getMessage(), ioe);
                 System.exit(1);
