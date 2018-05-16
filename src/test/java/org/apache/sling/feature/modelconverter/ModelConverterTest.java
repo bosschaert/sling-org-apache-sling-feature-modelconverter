@@ -50,6 +50,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +65,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -191,6 +193,67 @@ public class ModelConverterTest {
         assertFeaturesEqual(expected, actual);
     }
 
+    @Test
+    public void testConvertToProvisioningModelOverwriteLogic() throws Exception {
+        String originalJSON = "/boot.json";
+        String expectedProvModel = "/boot.txt";
+
+        File inFile = new File(getClass().getResource(originalJSON).toURI());
+        File outFile = new File(tempDir.toFile(), expectedProvModel + ".generated");
+
+        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+        List<String> orgLines = Files.readAllLines(outFile.toPath());
+        assertNotEquals("Test precondition", "modified!", orgLines.get(orgLines.size() - 1));
+
+        // Append to the output file:
+        Files.write(outFile.toPath(), "\nmodified!".getBytes(), StandardOpenOption.APPEND);
+
+        // Convert again and see that the output file is not modified
+        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+
+        List<String> lines = Files.readAllLines(outFile.toPath());
+        assertEquals("modified!", lines.get(lines.size() - 1));
+
+        // Modify the modification time of the generated file to be older than the input file
+        outFile.setLastModified(inFile.lastModified() - 100000);
+        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+
+        List<String> owLines = Files.readAllLines(outFile.toPath());
+        assertEquals("The file should have been overwritten since the source has modified since it's edit timestamp",
+                orgLines, owLines);
+    }
+
+    @Test
+    public void testConvertToFeature() throws Exception {
+        File inFile = new File(getClass().getResource("/boot.txt").toURI());
+
+        List<File> files = ProvisioningToFeature.convert(inFile, tempDir.toFile(), Collections.emptyMap());
+        assertEquals("The testing code expects a single output file here", 1, files.size());
+        File outFile = files.get(0);
+
+        List<String> orgLines = Files.readAllLines(outFile.toPath());
+        assertNotEquals("Test precondition", "modified!", orgLines.get(orgLines.size() - 1));
+
+        // Append to the output file:
+        Files.write(outFile.toPath(), "\nmodified!".getBytes(), StandardOpenOption.APPEND);
+
+        // Convert again and see that the output file is not modified
+        List<File> files2 = ProvisioningToFeature.convert(inFile, tempDir.toFile(), Collections.emptyMap());
+        assertEquals("Should return the same file list", files, files2);
+
+        List<String> lines = Files.readAllLines(outFile.toPath());
+        assertEquals("modified!", lines.get(lines.size() - 1));
+
+        // Modify the modification time of the generated file to be older than the input file
+        outFile.setLastModified(inFile.lastModified() - 100000);
+        List<File> files3 = ProvisioningToFeature.convert(inFile, tempDir.toFile(), Collections.emptyMap());
+        assertEquals("Should return the same file list", files, files3);
+
+        List<String> owLines = Files.readAllLines(outFile.toPath());
+        assertEquals("The file should have been overwritten since the source has modified since it's edit timestamp",
+                orgLines, owLines);
+    }
+
     public void testConvertFromProvModelRoundTrip(File orgProvModel) throws Exception {
         System.out.println("*** Roundtrip converting: " + orgProvModel.getName());
         List<File> allGenerateProvisioningModelFiles = new ArrayList<>();
@@ -202,7 +265,7 @@ public class ModelConverterTest {
             assertFalse("File name cannot contain a colon", baseName.contains(":"));
             File genFile = new File(tempDir.toFile(), baseName + ".txt");
             allGenerateProvisioningModelFiles.add(genFile);
-            FeatureToProvisioning.convert(f, genFile.getAbsolutePath(), artifactManager);
+            FeatureToProvisioning.convert(f, genFile, artifactManager);
         }
 
         Model expected = readProvisioningModel(orgProvModel);
@@ -227,8 +290,7 @@ public class ModelConverterTest {
         File inFile = new File(getClass().getResource(originalJSON).toURI());
         File outFile = new File(tempDir.toFile(), expectedProvModel + ".generated");
 
-        FeatureToProvisioning.convert(inFile, outFile.getAbsolutePath(),
-                artifactManager);
+        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
 
         File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
         Model expected = readProvisioningModel(expectedFile);

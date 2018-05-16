@@ -84,12 +84,18 @@ public class ProvisioningToFeature {
             id = bareFileName + "_" + id;
 
             File outFile = new File(outDir, id + ".json");
-            int counter = 0;
-            while (outFile.exists()) {
-                outFile = new File(outDir, id + "_" + (++counter) + ".json");
+            files.add(outFile);
+
+            if (outFile.exists()) {
+                if (outFile.lastModified() > file.lastModified()) {
+                    LOGGER.debug("Skipping the generation of {} as this file already exists and is newer.", outFile);
+                    continue;
+                } else {
+                    LOGGER.debug("Deleting existing file {} as source is newer", outFile);
+                    outFile.delete();
+                }
             }
 
-            files.add(outFile);
             writeFeature(f, outFile.getAbsolutePath(), 0);
         }
         return files;
@@ -508,7 +514,6 @@ public class ProvisioningToFeature {
     }
 
     private static void writeFeature(final org.apache.sling.feature.Feature f, String out, final int index) {
-        LOGGER.info("Writing feature...");
         if ( index > 0 ) {
             final int lastDot = out.lastIndexOf('.');
             if ( lastDot == -1 ) {

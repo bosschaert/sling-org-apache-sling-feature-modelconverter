@@ -60,8 +60,15 @@ public class FeatureToProvisioning {
     private static final Logger LOGGER = LoggerFactory.getLogger(FeatureToProvisioning.class);
     static final String PROVISIONING_MODEL_NAME_VARIABLE = "provisioning.model.name";
 
-    public static void convert(File file, String output, ArtifactManager am) throws IOException {
-        org.apache.sling.feature.Feature feature = IOUtils.getFeature(file.getAbsolutePath(), am, SubstituteVariables.NONE);
+    public static void convert(File inputFile, File outputFile, ArtifactManager am) throws IOException {
+        if (outputFile.exists()) {
+            if (outputFile.lastModified() > inputFile.lastModified()) {
+                LOGGER.debug("Skipping the generation of {} as this file already exists and is newer.", outputFile);
+                return;
+            }
+        }
+
+        org.apache.sling.feature.Feature feature = IOUtils.getFeature(inputFile.getAbsolutePath(), am, SubstituteVariables.NONE);
 
         Object featureNameVar = feature.getVariables().remove(PROVISIONING_MODEL_NAME_VARIABLE);
         String featureName;
@@ -72,7 +79,8 @@ public class FeatureToProvisioning {
         }
 
         Feature newFeature = new Feature(featureName);
-        convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(), feature.getFrameworkProperties(), feature.getExtensions(), output);
+        convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(),
+                feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath());
     }
 
     /*
@@ -242,7 +250,6 @@ public class FeatureToProvisioning {
             }
         }
 
-        LOGGER.info("Writing feature...");
         final String out = outputFile;
         final File file = new File(out);
         final Model m = new Model();
