@@ -59,6 +59,7 @@ import javax.json.JsonValue;
 public class FeatureToProvisioning {
     private static final Logger LOGGER = LoggerFactory.getLogger(FeatureToProvisioning.class);
     static final String PROVISIONING_MODEL_NAME_VARIABLE = "provisioning.model.name";
+    static final String PROVISIONING_RUNMODE = "provisioning.runmode";
 
     public static void convert(File inputFile, File outputFile, ArtifactManager am) throws IOException {
         if (outputFile.exists()) {
@@ -78,9 +79,15 @@ public class FeatureToProvisioning {
             featureName = feature.getId().getArtifactId();
         }
 
+        String runMode = (String) feature.getVariables().remove(PROVISIONING_RUNMODE);
+        String[] runModes = null;
+        if (runMode != null) {
+            runModes = runMode.split(",");
+        }
+
         Feature newFeature = new Feature(featureName);
         convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(),
-                feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath());
+                feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath(), runModes);
     }
 
     /*
@@ -117,11 +124,15 @@ public class FeatureToProvisioning {
         }
         final Feature feature = new Feature(featureName);
 
-        convert(feature, app.getVariables(), app.getBundles(), app.getConfigurations(), app.getFrameworkProperties(), app.getExtensions(), outputFile);
+        convert(feature, app.getVariables(), app.getBundles(), app.getConfigurations(),
+                app.getFrameworkProperties(), app.getExtensions(), outputFile, null);
     }
 
     private static void convert(Feature f, KeyValueMap variables, Bundles bundles, Configurations configurations, KeyValueMap frameworkProps,
-            Extensions extensions, String outputFile) {
+            Extensions extensions, String outputFile, String [] runModes) {
+        if (runModes != null && runModes.length == 0) {
+            runModes = null;
+        }
         org.apache.sling.provisioning.model.KeyValueMap<String> vars = f.getVariables();
         for (Map.Entry<String, String> entry : variables) {
             vars.put(entry.getKey(), entry.getValue());
@@ -162,8 +173,11 @@ public class FeatureToProvisioning {
                 startLevel = 20;
             }
 
-            String[] runModes = getRunModes(bundle);
-            f.getOrCreateRunMode(runModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
+            String[] bundleRunModes = runModes;
+            if (bundleRunModes == null) {
+                bundleRunModes = getRunModes(bundle);
+            }
+            f.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
         }
 
         // configurations
@@ -188,11 +202,13 @@ public class FeatureToProvisioning {
                 }
                 c.getProperties().put(key, val);
             }
-
-            String[] runModes = runModeList.toArray(new String[] {});
-            if (runModes.length == 0)
-                runModes = null;
-            f.getOrCreateRunMode(runModes).getConfigurations().add(c);
+            String[] cfgRunModes = runModes;
+            if (cfgRunModes == null) {
+                cfgRunModes = runModeList.toArray(new String[] {});
+                if (cfgRunModes.length == 0)
+                    cfgRunModes = null;
+            }
+            f.getOrCreateRunMode(cfgRunModes).getConfigurations().add(c);
         }
 
         // framework properties
@@ -214,17 +230,19 @@ public class FeatureToProvisioning {
         for(final Extension ext : extensions) {
             if ( FeatureConstants.EXTENSION_NAME_CONTENT_PACKAGES.equals(ext.getName()) ) {
                 for(final org.apache.sling.feature.Artifact cp : ext.getArtifacts() ) {
-                    String[] runmodes = null;
+                    String[] extRunModes = runModes;
                     final ArtifactId id = cp.getId();
                     final Artifact newCP = new Artifact(id.getGroupId(), id.getArtifactId(), id.getVersion(), id.getClassifier(), id.getType());
                     for(final Map.Entry<String, String> prop : cp.getMetadata()) {
                         if (prop.getKey().equals("runmodes")) {
-                            runmodes = prop.getValue().split(",");
+                            if (extRunModes == null) {
+                                extRunModes = prop.getValue().split(",");
+                            }
                         } else {
                             newCP.getMetadata().put(prop.getKey(), prop.getValue());
                         }
                     }
-                    f.getOrCreateRunMode(runmodes).getOrCreateArtifactGroup(20).add(newCP);
+                    f.getOrCreateRunMode(extRunModes).getOrCreateArtifactGroup(20).add(newCP);
                 }
 
             } else if ( FeatureConstants.EXTENSION_NAME_REPOINIT.equals(ext.getName()) ) {

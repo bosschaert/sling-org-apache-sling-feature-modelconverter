@@ -1,0 +1,23 @@
+{
+    "id": "generated/oak_tar/1.0.0",
+    
+    "variables": {
+        "oak.version": "1.6.8",
+        "provisioning.model.name": "oak",
+        "provisioning.runmode": "oak_tar"
+    },
+    
+    "bundles": [
+        {
+            "id": "org.apache.jackrabbit/oak-segment-tar/${oak.version}",
+            "start-level": 15,
+            "run-modes": "oak_tar"
+        }
+    ],
+    
+    "configurations": {
+        "org.apache.jackrabbit.oak.segment.SegmentNodeStoreService.runmodes.oak_tar": {
+            "name": "Default NodeStore"
+        }
+    }
+}

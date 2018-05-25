@@ -113,6 +113,16 @@ public class ModelConverterTest {
     }
 
     @Test
+    public void testSeparateRunmodeFiles() throws Exception {
+        testConvertToProvisioningModel(
+            new String[] {
+                    "/runmodeseparation/oak_no_runmode.json",
+                    "/runmodeseparation/oak_mongo.json",
+                    "/runmodeseparation/oak_tar.json"},
+            "/oak.txt");
+    }
+
+    @Test
     public void testOakToFeature() throws Exception {
         testConvertToFeature("/oak.txt", "/oak.json");
     }
@@ -295,6 +305,22 @@ public class ModelConverterTest {
         File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
         Model expected = readProvisioningModel(expectedFile);
         Model actual = readProvisioningModel(outFile);
+        assertModelsEqual(expected, actual);
+    }
+
+    public void testConvertToProvisioningModel(String [] jsonFiles, String expectedProvModel) throws URISyntaxException, IOException {
+        List<File> generatedFiles = new ArrayList<>();
+        for (String jsonFile : jsonFiles) {
+            File inFile = new File(getClass().getResource(jsonFile).toURI());
+            File outFile = new File(tempDir.toFile(), inFile.getName() + ".txt.generated");
+
+            FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+            generatedFiles.add(outFile);
+        }
+
+        File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
+        Model expected = readProvisioningModel(expectedFile);
+        Model actual = readProvisioningModel(generatedFiles);
         assertModelsEqual(expected, actual);
     }
 
