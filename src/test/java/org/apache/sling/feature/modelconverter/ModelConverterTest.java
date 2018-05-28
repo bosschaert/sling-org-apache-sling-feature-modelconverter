@@ -123,6 +123,31 @@ public class ModelConverterTest {
     }
 
     @Test
+    public void testDifferentSourceIdenticalProvModel() throws Exception {
+        String dir1 = System.getProperty("test.json.dir1");
+        String dir2 = System.getProperty("test.json.dir2");
+
+        File[] files1, files2;
+        if (dir1 != null && dir2 != null) {
+            files1 = new File(dir1).listFiles((d, n) -> n.endsWith(".json"));
+            files2 = new File(dir2).listFiles((d, n) -> n.endsWith(".json"));
+        } else {
+            files1 = new File[] {
+                  getFile("/runmodeseparation/oak_no_runmode.json"),
+                  getFile("/runmodeseparation/oak_mongo.json"),
+                  getFile("/runmodeseparation/oak_tar.json")
+            };
+            files2 = new File[] {getFile("/oak.json")};
+        }
+
+        testConvertToProvisioningModel(files1, files2);
+    }
+
+    private File getFile(String f) throws URISyntaxException {
+        return new File(getClass().getResource(f).toURI());
+    }
+
+    @Test
     public void testOakToFeature() throws Exception {
         testConvertToFeature("/oak.txt", "/oak.json");
     }
@@ -309,19 +334,37 @@ public class ModelConverterTest {
     }
 
     public void testConvertToProvisioningModel(String [] jsonFiles, String expectedProvModel) throws URISyntaxException, IOException {
-        List<File> generatedFiles = new ArrayList<>();
-        for (String jsonFile : jsonFiles) {
-            File inFile = new File(getClass().getResource(jsonFile).toURI());
-            File outFile = new File(tempDir.toFile(), inFile.getName() + ".txt.generated");
-
-            FeatureToProvisioning.convert(inFile, outFile, artifactManager);
-            generatedFiles.add(outFile);
+        List<File> inFiles = new ArrayList<>();
+        for (String jf : jsonFiles) {
+            inFiles.add(new File(getClass().getResource(jf).toURI()));
         }
+
+        List<File> generatedFiles = convertFeatureFilesToProvisioningModel(inFiles.toArray(new File[] {}));
 
         File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
         Model expected = readProvisioningModel(expectedFile);
         Model actual = readProvisioningModel(generatedFiles);
         assertModelsEqual(expected, actual);
+    }
+
+    public void testConvertToProvisioningModel(File[] jsonFiles1, File[] jsonFiles2) throws URISyntaxException, IOException {
+        List<File> generatedFiles1 = convertFeatureFilesToProvisioningModel(jsonFiles1);
+        List<File> generatedFiles2 = convertFeatureFilesToProvisioningModel(jsonFiles2);
+
+        Model actual1 = readProvisioningModel(generatedFiles1);
+        Model actual2 = readProvisioningModel(generatedFiles2);
+        assertModelsEqual(actual1, actual2);
+    }
+
+    private List<File> convertFeatureFilesToProvisioningModel(File[] jsonFiles) throws URISyntaxException, IOException {
+        List<File> generatedFiles = new ArrayList<>();
+        for (File inFile : jsonFiles) {
+            File outFile = new File(tempDir.toFile(), inFile.getName() + ".txt.generated");
+
+            FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+            generatedFiles.add(outFile);
+        }
+        return generatedFiles;
     }
 
     private static Model readProvisioningModel(File modelFile) throws IOException {
