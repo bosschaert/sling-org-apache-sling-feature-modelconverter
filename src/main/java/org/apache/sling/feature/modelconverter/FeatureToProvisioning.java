@@ -59,7 +59,7 @@ import javax.json.JsonValue;
 public class FeatureToProvisioning {
     private static final Logger LOGGER = LoggerFactory.getLogger(FeatureToProvisioning.class);
     static final String PROVISIONING_MODEL_NAME_VARIABLE = "provisioning.model.name";
-    static final String PROVISIONING_RUNMODE = "provisioning.runmode";
+    static final String PROVISIONING_RUNMODES = "provisioning.runmodes";
 
     public static void convert(File inputFile, File outputFile, ArtifactManager am) throws IOException {
         if (outputFile.exists()) {
@@ -79,7 +79,7 @@ public class FeatureToProvisioning {
             featureName = feature.getId().getArtifactId();
         }
 
-        String runMode = (String) feature.getVariables().remove(PROVISIONING_RUNMODE);
+        String runMode = (String) feature.getVariables().remove(PROVISIONING_RUNMODES);
         String[] runModes = null;
         if (runMode != null) {
             runModes = runMode.split(",");

@@ -140,7 +140,7 @@ public class ModelConverterTest {
             files2 = new File[] {getFile("/oak.json")};
         }
 
-        testConvertToProvisioningModel(files1, files2);
+        testConvertToProvisioningModel(files2, files1);
     }
 
     private File getFile(String f) throws URISyntaxException {
@@ -345,6 +345,7 @@ public class ModelConverterTest {
         Model expected = readProvisioningModel(expectedFile);
         Model actual = readProvisioningModel(generatedFiles);
         assertModelsEqual(expected, actual);
+        assertModelsEqual(actual, expected);
     }
 
     public void testConvertToProvisioningModel(File[] jsonFiles1, File[] jsonFiles2) throws URISyntaxException, IOException {
@@ -354,12 +355,17 @@ public class ModelConverterTest {
         Model actual1 = readProvisioningModel(generatedFiles1);
         Model actual2 = readProvisioningModel(generatedFiles2);
         assertModelsEqual(actual1, actual2);
+        assertModelsEqual(actual2, actual1);
     }
 
     private List<File> convertFeatureFilesToProvisioningModel(File[] jsonFiles) throws URISyntaxException, IOException {
         List<File> generatedFiles = new ArrayList<>();
         for (File inFile : jsonFiles) {
-            File outFile = new File(tempDir.toFile(), inFile.getName() + ".txt.generated");
+            File outFile;
+            int counter = 0;
+            do {
+                outFile = new File(tempDir.toFile(), inFile.getName() + (counter++) + ".txt.generated");
+            } while (outFile.exists());
 
             FeatureToProvisioning.convert(inFile, outFile, artifactManager);
             generatedFiles.add(outFile);

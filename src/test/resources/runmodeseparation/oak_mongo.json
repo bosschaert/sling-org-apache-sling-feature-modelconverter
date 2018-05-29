@@ -4,7 +4,7 @@
     "variables": {
         "oak.version": "1.6.8",
         "provisioning.model.name": "oak",
-        "provisioning.runmode": "oak_mongo"
+        "provisioning.runmodes": "oak_mongo"
     },
 
     "bundles": [
