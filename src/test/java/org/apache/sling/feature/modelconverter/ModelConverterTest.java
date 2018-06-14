@@ -21,6 +21,7 @@ import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.io.IOUtils;
@@ -42,6 +43,9 @@ import org.apache.sling.provisioning.model.io.ModelReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.FileReader;
@@ -184,8 +188,28 @@ public class ModelConverterTest {
 
     @Test
     public void testSimpleInheritsToProvModel() throws Exception {
-        testConvertToProvisioningModel("/simple.json", "/simple.txt", "/simple_inherits.json");
-        testConvertToProvisioningModel("/simple.json", "/simple.txt", "/simple.json", "/simple_inherits.json");
+        testConvertToProvisioningModel("/simple_inherits.json", "/simple_inherits.txt", "/simple.json");
+        testConvertToProvisioningModel("/simple_inherits.json", "/simple_inherits.txt", "/simple.json", "/simple_inherits.json");
+    }
+
+    @Test
+    public void testSimpleInheritsViaMavenRepoToProvModel() throws Exception {
+        artifactManager = Mockito.mock(ArtifactManager.class);
+        Mockito.when(artifactManager.getArtifactHandler(Mockito.anyString())).then(new Answer<ArtifactHandler>() {
+            @Override
+            public ArtifactHandler answer(InvocationOnMock in) throws Throwable {
+                String url = in.getArgument(0).toString();
+
+                if (url.endsWith("simple_inherits.json")) {
+                    return new ArtifactHandler(url, new File(url));
+                } else if ("mvn:generated/simple/1.0.0".equals(url)) {
+                    return new ArtifactHandler(url, new File(getClass().getResource("/simple2.json").toURI()));
+                }
+                return null;
+            }
+        });
+
+        testConvertToProvisioningModel("/simple_inherits.json", "/simple_inherits.txt");
     }
 
     @Test

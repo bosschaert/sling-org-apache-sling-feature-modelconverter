@@ -28,6 +28,7 @@ import org.apache.sling.feature.KeyValueMap;
 import org.apache.sling.feature.builder.BuilderContext;
 import org.apache.sling.feature.builder.FeatureBuilder;
 import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
@@ -107,7 +108,27 @@ public class FeatureToProvisioning {
         BuilderContext bc = new BuilderContext(new FeatureProvider() {
             @Override
             public org.apache.sling.feature.Feature provide(ArtifactId id) {
-                return features.get(id);
+                // Check first if the feature is part of the provided context
+                org.apache.sling.feature.Feature f = features.get(id);
+                if (f != null) {
+                    return f;
+                }
+
+                // If not, see if it is known to Maven
+                try {
+                    ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
+                    if (ah != null) {
+                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am, SubstituteVariables.NONE);
+                        if (feat != null) {
+                            // Cache it
+                            features.put(feat.getId(), feat);
+                        }
+                        return feat;
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return null;
             }
         });
         return FeatureBuilder.assemble(feature, bc);
