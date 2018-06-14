@@ -25,6 +25,9 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.FeatureConstants;
 import org.apache.sling.feature.KeyValueMap;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
@@ -61,7 +64,7 @@ public class FeatureToProvisioning {
     static final String PROVISIONING_MODEL_NAME_VARIABLE = "provisioning.model.name";
     static final String PROVISIONING_RUNMODES = "provisioning.runmodes";
 
-    public static void convert(File inputFile, File outputFile, ArtifactManager am) throws IOException {
+    public static void convert(File inputFile, File outputFile, ArtifactManager am, File ... additionalInputFiles) throws IOException {
         if (outputFile.exists()) {
             if (outputFile.lastModified() > inputFile.lastModified()) {
                 LOGGER.debug("Skipping the generation of {} as this file already exists and is newer.", outputFile);
@@ -70,6 +73,9 @@ public class FeatureToProvisioning {
         }
 
         org.apache.sling.feature.Feature feature = IOUtils.getFeature(inputFile.getAbsolutePath(), am, SubstituteVariables.NONE);
+        if (feature.getIncludes().size() > 0) {
+            feature = handleIncludes(feature, additionalInputFiles, am);
+        }
 
         Object featureNameVar = feature.getVariables().remove(PROVISIONING_MODEL_NAME_VARIABLE);
         String featureName;
@@ -88,6 +94,23 @@ public class FeatureToProvisioning {
         Feature newFeature = new Feature(featureName);
         convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(),
                 feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath(), runModes);
+    }
+
+    private static org.apache.sling.feature.Feature handleIncludes(org.apache.sling.feature.Feature feature, File[] additionalFiles, ArtifactManager am) throws IOException {
+        Map<ArtifactId, org.apache.sling.feature.Feature> features = new HashMap<>();
+
+        for (File f : additionalFiles) {
+            org.apache.sling.feature.Feature af = IOUtils.getFeature(f.getAbsolutePath(), am, SubstituteVariables.NONE);
+            features.put(af.getId(), af);
+        }
+
+        BuilderContext bc = new BuilderContext(new FeatureProvider() {
+            @Override
+            public org.apache.sling.feature.Feature provide(ArtifactId id) {
+                return features.get(id);
+            }
+        });
+        return FeatureBuilder.assemble(feature, bc);
     }
 
     /*

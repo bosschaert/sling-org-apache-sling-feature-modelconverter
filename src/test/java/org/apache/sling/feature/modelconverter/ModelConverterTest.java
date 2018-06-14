@@ -183,6 +183,12 @@ public class ModelConverterTest {
     }
 
     @Test
+    public void testSimpleInheritsToProvModel() throws Exception {
+        testConvertToProvisioningModel("/simple.json", "/simple.txt", "/simple_inherits.json");
+        testConvertToProvisioningModel("/simple.json", "/simple.txt", "/simple.json", "/simple_inherits.json");
+    }
+
+    @Test
     public void testSimple2ToProvModel() throws Exception {
         testConvertToProvisioningModel("/simple2.json", "/simple2.txt");
     }
@@ -321,11 +327,15 @@ public class ModelConverterTest {
         assertFeaturesEqual(expected, actual);
     }
 
-    public void testConvertToProvisioningModel(String originalJSON, String expectedProvModel) throws URISyntaxException, IOException {
+    public void testConvertToProvisioningModel(String originalJSON, String expectedProvModel, String ... additionalContextFiles) throws URISyntaxException, IOException {
         File inFile = new File(getClass().getResource(originalJSON).toURI());
         File outFile = new File(tempDir.toFile(), expectedProvModel + ".generated");
+        List<File> addFiles = new ArrayList<>();
+        for (String af : additionalContextFiles) {
+            addFiles.add(new File(getClass().getResource(af).toURI()));
+        }
 
-        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+        FeatureToProvisioning.convert(inFile, outFile, artifactManager, addFiles.toArray(new File[] {}));
 
         File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
         Model expected = readProvisioningModel(expectedFile);
