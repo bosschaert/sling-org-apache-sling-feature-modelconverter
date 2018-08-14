@@ -16,6 +16,12 @@
  */
 package org.apache.sling.feature.modelconverter.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -27,12 +33,6 @@ import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class Main {
 
@@ -59,7 +59,7 @@ public class Main {
      */
     private static void parseArgs(final String[] args) {
         final Option repoOption =  Option.builder("u").hasArg().argName("Set repository url")
-                .desc("repository url").required().build();
+                .desc("repository url").build();
 
         final Option modelOption =  new Option("f", true, "Set feature files/directories");
         final Option propsOption =  new Option("p", true, "sling.properties file");
