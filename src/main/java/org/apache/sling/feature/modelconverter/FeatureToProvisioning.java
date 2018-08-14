@@ -16,6 +16,23 @@
  */
 package org.apache.sling.feature.modelconverter;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
 import org.apache.sling.feature.Application;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
@@ -40,23 +57,6 @@ import org.apache.sling.provisioning.model.Section;
 import org.apache.sling.provisioning.model.io.ModelWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonValue;
 
 /** Converter that converts the feature model to the provisioning model.
  */
@@ -174,6 +174,8 @@ public class FeatureToProvisioning {
 
     private static void convert(Feature f, KeyValueMap variables, Bundles bundles, Configurations configurations, KeyValueMap frameworkProps,
             Extensions extensions, String outputFile, String [] runModes) {
+        final Map<String, Feature> additionalFeatures = new HashMap<>();
+
         if (runModes != null && runModes.length == 0) {
             runModes = null;
         }
@@ -209,19 +211,35 @@ public class FeatureToProvisioning {
                 }
             }
 
-            int startLevel;
-            String sl = bundle.getMetadata().get("start-level");
-            if (sl != null) {
-                startLevel = Integer.parseInt(sl);
-            } else {
-                startLevel = 20;
-            }
-
             String[] bundleRunModes = runModes;
             if (bundleRunModes == null) {
                 bundleRunModes = getRunModes(bundle);
             }
-            f.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
+
+            int startLevel;
+            String sl = bundle.getMetadata().get("start-level");
+            // special handling for :boot or :launchpad
+            if ( sl != null && sl.startsWith(":") ) {
+                if ( bundleRunModes != null ) {
+                    LOGGER.error("Unable to convert feature {}. Run modes must not be defined for bundles with start-level {}", f.getName(), sl);
+                    System.exit(1);
+                }
+
+                Feature addFeat = additionalFeatures.get(sl);
+                if ( addFeat == null ) {
+                    addFeat = new Feature(sl);
+                    additionalFeatures.put(sl, addFeat);
+                }
+                addFeat.getOrCreateRunMode(null).getOrCreateArtifactGroup(0).add(newBundle);
+            } else {
+                if (sl != null) {
+                    startLevel = Integer.parseInt(sl);
+                } else {
+                    startLevel = 20;
+                }
+
+                f.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
+            }
         }
 
         // configurations
@@ -316,6 +334,9 @@ public class FeatureToProvisioning {
         final File file = new File(out);
         final Model m = new Model();
         m.getFeatures().add(f);
+        for(final Feature addFeat : additionalFeatures.values()) {
+            m.getFeatures().add(addFeat);
+        }
         try ( final FileWriter writer = new FileWriter(file)) {
             ModelWriter.write(writer, m);
         } catch ( final IOException ioe) {
