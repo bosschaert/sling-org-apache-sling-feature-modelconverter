@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.modelconverter;
+package org.apache.sling.feature.modelconverter.impl;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -24,6 +24,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
+import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
