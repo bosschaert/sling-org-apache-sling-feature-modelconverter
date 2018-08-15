@@ -30,6 +30,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
+import org.apache.sling.feature.modelconverter.FeatureToProvisioning;
 import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,12 +146,6 @@ public class Main {
 
         parseArgs(args);
 
-        final ArtifactManagerConfig amConfig = new ArtifactManagerConfig();
-        if ( repoUrls != null ) {
-            amConfig.setRepositoryUrls(repoUrls.split(","));
-        }
-        final ArtifactManager am = getArtifactManager();
-
         final File f = new File(input);
         final List<File> files = new ArrayList<>();
         if ( f.isDirectory() ) {
@@ -195,8 +190,7 @@ public class Main {
                 output = createApp ? "application.txt" : "feature.txt";
             }
             try {
-                throw new IOException("Not yet supported");
-                // FeatureToProvisioning.convert(files, output, createApp, am);
+                FeatureToProvisioning.convert(files, output, createApp, getArtifactManager());
             } catch ( final IOException ioe) {
                 LOGGER.error("Unable to read feature/application files " + ioe.getMessage(), ioe);
                 System.exit(1);

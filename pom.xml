@@ -57,7 +57,7 @@
                         <outputDirectory>${project.build.directory}/classes</outputDirectory>
                         <overWriteReleases>false</overWriteReleases>
                         <overWriteSnapshots>true</overWriteSnapshots>
-                        <includeArtifactIds>commons-cli,org.apache.sling.feature,org.apache.sling.feature.support,org.apache.sling.commons.johnzon,org.apache.sling.provisioning.model,slf4j-api,slf4j-simple,osgi.core</includeArtifactIds>
+                        <includeArtifactIds>commons-cli,org.apache.sling.feature,org.apache.sling.feature.io,org.apache.sling.commons.johnzon,org.apache.sling.provisioning.model,slf4j-api,slf4j-simple,osgi.core</includeArtifactIds>
                     </configuration>
                 </execution>
             </executions>

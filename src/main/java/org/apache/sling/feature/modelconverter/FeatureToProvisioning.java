@@ -17,6 +17,7 @@
 package org.apache.sling.feature.modelconverter;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -42,12 +43,14 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.FeatureConstants;
 import org.apache.sling.feature.KeyValueMap;
+import org.apache.sling.feature.builder.ApplicationBuilder;
 import org.apache.sling.feature.builder.BuilderContext;
 import org.apache.sling.feature.builder.FeatureBuilder;
 import org.apache.sling.feature.builder.FeatureProvider;
 import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.IOUtils;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.Configuration;
@@ -134,28 +137,46 @@ public class FeatureToProvisioning {
         return FeatureBuilder.assemble(feature, bc);
     }
 
-    /*
+
     public static void convert(List<File> files, String output, boolean createApp, ArtifactManager am) throws Exception {
-        try (FeatureResolver fr = null) { // TODO we could use the resolver: new FrameworkResolver(am)
-            if ( createApp ) {
-                // each file is an application
-                int index = 1;
-                for(final File appFile : files ) {
-                    try ( final FileReader r = new FileReader(appFile) ) {
-                        final Application app = ApplicationJSONReader.read(r);
-                        FeatureToProvisioning.convert(app, files.size() > 1 ? index : 0, output);
-                    }
-                    index++;
-                }
-            } else {
-                final Application app = ApplicationResolverAssembler.assembleApplication(null, am, fr, files.stream()
-                        .map(File::getAbsolutePath)
-                        .toArray(String[]::new));
-                FeatureToProvisioning.convert(app, 0, output);
+        final Map<ArtifactId, org.apache.sling.feature.Feature> features = new HashMap<>();
+
+        for(final File file : files) {
+            try (final FileReader r = new FileReader(file)) {
+                final org.apache.sling.feature.Feature f = FeatureJSONReader.read(r, file.getAbsolutePath(), SubstituteVariables.NONE);
+                features.put(f.getId(), f);
             }
         }
+        final Application app = ApplicationBuilder.assemble(null, new BuilderContext(new FeatureProvider() {
+
+            @Override
+            public org.apache.sling.feature.Feature provide(ArtifactId id) {
+                // Check first if the feature is part of the provided context
+                org.apache.sling.feature.Feature f = features.get(id);
+                if (f != null) {
+                    return f;
+                }
+
+                // If not, see if it is known to Maven
+                try {
+                    ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
+                    if (ah != null) {
+                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am, SubstituteVariables.NONE);
+                        if (feat != null) {
+                            // Cache it
+                            features.put(feat.getId(), feat);
+                        }
+                        return feat;
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return null;
+            }
+        }), features.values().toArray(new org.apache.sling.feature.Feature[features.size()]));
+        FeatureToProvisioning.convert(app, 0, output);
     }
-    */
+
 
     private static void convert(final Application app, final int index, final String outputFile) {
         String featureName;
