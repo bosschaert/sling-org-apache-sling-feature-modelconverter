@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -109,12 +110,19 @@ public class Main {
             }
         } catch ( final ParseException pe) {
             LOGGER.error("Unable to parse command line: {}", pe.getMessage(), pe);
+            help(options);
             System.exit(1);
         }
         if ( input == null ) {
             LOGGER.error("Required argument missing: model file or directory");
+            help(options);
             System.exit(1);
         }
+    }
+
+    private static void help(Options options) {
+        final HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("launcher", options);
     }
 
     private static ArtifactManager getArtifactManager() {
