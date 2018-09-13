@@ -319,6 +319,11 @@ public class ModelConverterTest {
                 orgLines, owLines);
     }
 
+    @Test
+    public void testMultipleRepoinitSections() throws Exception {
+        testConvertToFeature("/more/repoinit-multiple.txt", "/more/repoinit-multiple.json");
+    }
+
     public void testConvertFromProvModelRoundTrip(File orgProvModel) throws Exception {
         System.out.println("*** Roundtrip converting: " + orgProvModel.getName());
         List<File> allGenerateProvisioningModelFiles = new ArrayList<>();

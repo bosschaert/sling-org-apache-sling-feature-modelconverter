@@ -1,0 +1,10 @@
+{
+    "#": "this is a comment",
+
+    "id": "generated/repoinit-multiple/1.0.0",
+    "repoinit:JSON|true": [
+        "create service user one",
+        "create service user two",
+        "create service user three"
+    ]
+}

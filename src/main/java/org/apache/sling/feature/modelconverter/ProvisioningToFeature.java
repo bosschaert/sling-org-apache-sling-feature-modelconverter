@@ -410,42 +410,46 @@ public class ProvisioningToFeature {
                 }
             }
         }
-        Extension repoExtension = extensions.getByName(FeatureConstants.EXTENSION_NAME_REPOINIT);
-        for(final Section sect : feature.getAdditionalSections("repoinit")) {
-            String text = sect.getContents();
-            if ( repoExtension == null ) {
-//                repoExtension = new Extension(ExtensionType.TEXT, Extension.NAME_REPOINIT, true);
-//                extensions.add(repoExtension);
-//                repoExtension.setJSON(text);
 
+        final StringBuilder repoinitText = new StringBuilder();
+        for(final Section sect : feature.getAdditionalSections("repoinit")) {
+            repoinitText.append(sect.getContents()).append("\n");
+        }
+
+        if(repoinitText.length() > 0) {
+            Extension repoExtension = extensions.getByName(FeatureConstants.EXTENSION_NAME_REPOINIT);
+
+            if ( repoExtension == null ) {
                 repoExtension = new Extension(ExtensionType.JSON, FeatureConstants.EXTENSION_NAME_REPOINIT, true);
                 extensions.add(repoExtension);
-                text = text.replace('\t', ' ');
-                String[] lines = text.split("[\n]");
-
-                StringBuilder sb = new StringBuilder();
-                sb.append('[');
-
-                boolean first = true;
-                for (String t : lines) {
-                    if (first)
-                        first = false;
-                    else
-                        sb.append(',');
-
-                    sb.append('"');
-                    sb.append(t);
-                    sb.append('"');
-                }
-                sb.append(']');
-
-                repoExtension.setJSON(sb.toString());
+                repoExtension.setJSON(textToJSON(repoinitText.toString()));
             } else {
-                repoExtension.setText(repoExtension.getText() + "\n\n" + text);
+                throw new IllegalStateException("Repoinit sections already processed");
             }
         }
-    }
+}
 
+    private static String textToJSON(String text) {
+        text = text.replace('\t', ' ');
+        String[] lines = text.split("[\n]");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+
+        boolean first = true;
+        for (String t : lines) {
+            if (first)
+                first = false;
+            else
+                sb.append(',');
+
+            sb.append('"');
+            sb.append(t);
+            sb.append('"');
+        }
+        sb.append(']');
+        return sb.toString();
+    }
 
     private static List<org.apache.sling.feature.Feature> buildFeatures(Model model, String bareFileName, Map<String, Object> options) {
         final List<org.apache.sling.feature.Feature> features = new ArrayList<>();
