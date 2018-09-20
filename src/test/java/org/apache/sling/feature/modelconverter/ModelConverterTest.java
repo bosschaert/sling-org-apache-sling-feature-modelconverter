@@ -25,7 +25,6 @@ import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
 import org.apache.sling.provisioning.model.Configuration;
@@ -203,7 +202,7 @@ public class ModelConverterTest {
                 if (url.endsWith("simple_inherits.json")) {
                     return new ArtifactHandler(url, new File(url));
                 } else if ("mvn:generated/simple/1.0.0".equals(url)) {
-                    return new ArtifactHandler(url, new File(getClass().getResource("/simple2.json").toURI()));
+                    return new ArtifactHandler(url, new File(getClass().getResource("/simple.json").toURI()));
                 }
                 return null;
             }
@@ -253,8 +252,8 @@ public class ModelConverterTest {
         File outFile = files.get(0);
 
         String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager, SubstituteVariables.NONE);
-        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager, SubstituteVariables.NONE);
+        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager);
+        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager);
         assertFeaturesEqual(expected, actual);
     }
 
@@ -351,8 +350,8 @@ public class ModelConverterTest {
         File outFile = files.get(0);
 
         String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager, SubstituteVariables.NONE);
-        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager, SubstituteVariables.NONE);
+        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager);
+        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager);
         assertFeaturesEqual(expected, actual);
     }
 

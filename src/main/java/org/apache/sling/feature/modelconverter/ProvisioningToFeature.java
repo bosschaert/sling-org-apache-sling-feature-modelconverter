@@ -29,7 +29,6 @@ import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
 import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.feature.io.json.ApplicationJSONWriter;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
@@ -105,17 +104,11 @@ public class ProvisioningToFeature {
             boolean includeModelInfo, String propsFile) {
         final Model model = createModel(files, runModes, false, includeModelInfo);
 
-        if ( createApp ) {
-            final Application app = buildApplication(model, propsFile);
-
-            writeApplication(app, outputFile);
-        } else {
-            final List<org.apache.sling.feature.Feature> features = buildFeatures(model, null, Collections.emptyMap());
-            int index = 1;
-            for(final org.apache.sling.feature.Feature feature : features) {
-                writeFeature(feature, outputFile, features.size() > 1 ? index : 0);
-                index++;
-            }
+        final List<org.apache.sling.feature.Feature> features = buildFeatures(model, null, Collections.emptyMap());
+        int index = 1;
+        for(final org.apache.sling.feature.Feature feature : features) {
+            writeFeature(feature, outputFile, features.size() > 1 ? index : 0);
+            index++;
         }
     }
 
@@ -503,17 +496,6 @@ public class ProvisioningToFeature {
             return (T) options.get(name);
         } else {
             return defaultValue;
-        }
-    }
-
-    private static void writeApplication(final Application app, final String out) {
-        LOGGER.info("Writing application...");
-        final File file = new File(out);
-        try ( final FileWriter writer = new FileWriter(file)) {
-            ApplicationJSONWriter.write(writer, app);
-        } catch ( final IOException ioe) {
-            LOGGER.error("Unable to write application to {} : {}", out, ioe.getMessage(), ioe);
-            System.exit(1);
         }
     }
 

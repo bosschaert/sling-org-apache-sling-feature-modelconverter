@@ -1,10 +1,9 @@
 {
   "id":"generated:simple-inherits:1.0.0",
-  "includes": [
-       {
-           "id": "generated:simple:1.0.0"
-       }
-   ],
+  "include":
+  {
+      "id": "generated:simple:1.0.0"
+  },
   "bundles":[
       "org.apache.sling/org.apache.sling.commons.log/5.1.0"
   ]

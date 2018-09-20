@@ -51,7 +51,6 @@ import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.apache.sling.feature.io.json.FeatureJSONReader.SubstituteVariables;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.Configuration;
 import org.apache.sling.provisioning.model.Feature;
@@ -76,8 +75,8 @@ public class FeatureToProvisioning {
             }
         }
 
-        org.apache.sling.feature.Feature feature = IOUtils.getFeature(inputFile.getAbsolutePath(), am, SubstituteVariables.NONE);
-        if (feature.getIncludes().size() > 0) {
+        org.apache.sling.feature.Feature feature = IOUtils.getFeature(inputFile.getAbsolutePath(), am);
+        if (feature.getInclude() != null) {
             feature = handleIncludes(feature, additionalInputFiles, am);
         }
 
@@ -89,7 +88,7 @@ public class FeatureToProvisioning {
             featureName = feature.getId().getArtifactId();
         }
 
-        String runMode = (String) feature.getVariables().remove(PROVISIONING_RUNMODES);
+        String runMode = feature.getVariables().remove(PROVISIONING_RUNMODES);
         String[] runModes = null;
         if (runMode != null) {
             runModes = runMode.split(",");
@@ -104,7 +103,7 @@ public class FeatureToProvisioning {
         Map<ArtifactId, org.apache.sling.feature.Feature> features = new HashMap<>();
 
         for (File f : additionalFiles) {
-            org.apache.sling.feature.Feature af = IOUtils.getFeature(f.getAbsolutePath(), am, SubstituteVariables.NONE);
+            org.apache.sling.feature.Feature af = IOUtils.getFeature(f.getAbsolutePath(), am);
             features.put(af.getId(), af);
         }
 
@@ -121,7 +120,7 @@ public class FeatureToProvisioning {
                 try {
                     ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
                     if (ah != null) {
-                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am, SubstituteVariables.NONE);
+                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am);
                         if (feat != null) {
                             // Cache it
                             features.put(feat.getId(), feat);
@@ -143,7 +142,7 @@ public class FeatureToProvisioning {
 
         for(final File file : files) {
             try (final FileReader r = new FileReader(file)) {
-                final org.apache.sling.feature.Feature f = FeatureJSONReader.read(r, file.getAbsolutePath(), SubstituteVariables.NONE);
+                final org.apache.sling.feature.Feature f = FeatureJSONReader.read(r, file.getAbsolutePath());
                 features.put(f.getId(), f);
             }
         }
@@ -161,7 +160,7 @@ public class FeatureToProvisioning {
                 try {
                     ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
                     if (ah != null) {
-                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am, SubstituteVariables.NONE);
+                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am);
                         if (feat != null) {
                             // Cache it
                             features.put(feat.getId(), feat);
@@ -212,7 +211,7 @@ public class FeatureToProvisioning {
             final ArtifactId id = bundle.getId();
             final Artifact newBundle = new Artifact(id.getGroupId(), id.getArtifactId(), id.getVersion(), id.getClassifier(), id.getType());
 
-            Object configs = bundle.getMetadata().getObject("configurations");
+            Object configs = bundle.getMetadata().get("configurations");
             if (configs instanceof List) {
                 for (Object config : (List<?>) configs) {
                     if (config instanceof org.apache.sling.feature.Configuration) {
