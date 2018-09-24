@@ -16,7 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import org.apache.sling.feature.Application;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
@@ -28,7 +27,6 @@ import org.apache.sling.feature.KeyValueMap;
 import org.apache.sling.feature.io.ArtifactHandler;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
-import org.apache.sling.feature.io.IOUtils;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
@@ -293,27 +291,6 @@ public class ProvisioningToFeature {
                 }
             }
         }
-    }
-
-    private static Application buildApplication(final Model model, String propsFile) {
-        final Application app = new Application();
-
-        for(final Feature feature : model.getFeatures() ) {
-            buildFromFeature(feature, app.getVariables(), app.getBundles(), app.getConfigurations(), app.getExtensions(), app.getFrameworkProperties());
-        }
-
-        // hard coded dependency to launchpad api
-        final org.apache.sling.feature.Artifact a = new org.apache.sling.feature.Artifact(ArtifactId.parse("org.apache.sling/org.apache.sling.launchpad.api/1.2.0"));
-        a.getMetadata().put(org.apache.sling.feature.Artifact.KEY_START_ORDER, "1");
-        // sling.properties (TODO)
-        if ( propsFile == null ) {
-            app.getFrameworkProperties().put("org.osgi.framework.bootdelegation", "sun.*,com.sun.*");
-        } else {
-
-        }
-        // felix framework hard coded for now
-        app.setFramework(IOUtils.getFelixFrameworkId(null));
-        return app;
     }
 
     private static void buildFromFeature(final Feature feature,

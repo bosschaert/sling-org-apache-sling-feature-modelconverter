@@ -16,8 +16,30 @@
  */
 package org.apache.sling.feature.modelconverter;
 
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.FeatureConstants;
+import org.apache.sling.feature.KeyValueMap;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.ArtifactHandler;
+import org.apache.sling.feature.io.ArtifactManager;
+import org.apache.sling.feature.io.IOUtils;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,32 +55,6 @@ import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-
-import org.apache.sling.feature.Application;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.KeyValueMap;
-import org.apache.sling.feature.builder.ApplicationBuilder;
-import org.apache.sling.feature.builder.BuilderContext;
-import org.apache.sling.feature.builder.FeatureBuilder;
-import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.ArtifactHandler;
-import org.apache.sling.feature.io.ArtifactManager;
-import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Converter that converts the feature model to the provisioning model.
  */
@@ -134,62 +130,6 @@ public class FeatureToProvisioning {
             }
         });
         return FeatureBuilder.assemble(feature, bc);
-    }
-
-
-    public static void convert(List<File> files, String output, boolean createApp, ArtifactManager am) throws Exception {
-        final Map<ArtifactId, org.apache.sling.feature.Feature> features = new HashMap<>();
-
-        for(final File file : files) {
-            try (final FileReader r = new FileReader(file)) {
-                final org.apache.sling.feature.Feature f = FeatureJSONReader.read(r, file.getAbsolutePath());
-                features.put(f.getId(), f);
-            }
-        }
-        final Application app = ApplicationBuilder.assemble(null, new BuilderContext(new FeatureProvider() {
-
-            @Override
-            public org.apache.sling.feature.Feature provide(ArtifactId id) {
-                // Check first if the feature is part of the provided context
-                org.apache.sling.feature.Feature f = features.get(id);
-                if (f != null) {
-                    return f;
-                }
-
-                // If not, see if it is known to Maven
-                try {
-                    ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
-                    if (ah != null) {
-                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am);
-                        if (feat != null) {
-                            // Cache it
-                            features.put(feat.getId(), feat);
-                        }
-                        return feat;
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                return null;
-            }
-        }), features.values().toArray(new org.apache.sling.feature.Feature[features.size()]));
-        FeatureToProvisioning.convert(app, 0, output);
-    }
-
-
-    private static void convert(final Application app, final int index, final String outputFile) {
-        String featureName;
-
-        List<ArtifactId> fids = app.getFeatureIds();
-        if (fids.size() > 0) {
-            featureName = fids.get(0).getArtifactId();
-        } else {
-            featureName = "application";
-        }
-        final Feature feature = new Feature(featureName);
-
-        convert(feature, app.getVariables(), app.getBundles(), app.getConfigurations(),
-                app.getFrameworkProperties(), app.getExtensions(), outputFile, null);
     }
 
     private static void convert(Feature f, KeyValueMap variables, Bundles bundles, Configurations configurations, KeyValueMap frameworkProps,

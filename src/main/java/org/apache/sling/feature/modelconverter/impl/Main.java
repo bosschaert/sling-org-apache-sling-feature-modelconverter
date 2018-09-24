@@ -16,12 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -31,10 +25,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sling.feature.io.ArtifactManager;
 import org.apache.sling.feature.io.ArtifactManagerConfig;
-import org.apache.sling.feature.modelconverter.FeatureToProvisioning;
 import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Main {
 
@@ -194,18 +193,8 @@ public class Main {
             }
             ProvisioningToFeature.convert(files, output, runModes, createApp, includeModelInfo, propsFile);
         } else {
-            if ( output == null ) {
-                output = createApp ? "application.txt" : "feature.txt";
-            }
-            try {
-                FeatureToProvisioning.convert(files, output, createApp, getArtifactManager());
-            } catch ( final IOException ioe) {
-                LOGGER.error("Unable to read feature/application files " + ioe.getMessage(), ioe);
-                System.exit(1);
-            } catch ( final Exception e) {
-                LOGGER.error("Problem generating application", e);
-                System.exit(1);
-            }
+            LOGGER.error("Conversion to provisioning model not supported");
+            System.exit(1);
         }
     }
 
