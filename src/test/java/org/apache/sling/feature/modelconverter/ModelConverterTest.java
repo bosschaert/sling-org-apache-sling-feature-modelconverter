@@ -25,6 +25,8 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,14 +44,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.builder.FeatureProvider;
 import org.apache.sling.feature.io.file.ArtifactHandler;
 import org.apache.sling.feature.io.file.ArtifactManager;
 import org.apache.sling.feature.io.file.ArtifactManagerConfig;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
 import org.apache.sling.provisioning.model.Configuration;
@@ -74,6 +79,7 @@ import org.mockito.stubbing.Answer;
 public class ModelConverterTest {
     private Path tempDir;
     private ArtifactManager artifactManager;
+    private FeatureProvider featureProvider;
 
     @Before
     public void setup() throws Exception {
@@ -86,6 +92,17 @@ public class ModelConverterTest {
         }
         artifactManager = ArtifactManager.getArtifactManager(
                 new ArtifactManagerConfig());
+        featureProvider =
+            id -> {
+                try {
+                    File file = artifactManager.getArtifactHandler(id.toMvnUrl()).getFile();
+                    try (Reader reader = new FileReader(file)) {
+                        return FeatureJSONReader.read(reader, file.toURI().toURL().toString());
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
     }
 
     @After
@@ -250,9 +267,9 @@ public class ModelConverterTest {
         assertEquals("The testing code expects a single output file here", 1, files.size());
         File outFile = files.get(0);
 
-        String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile, artifactManager);
-        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile.getAbsolutePath(), artifactManager);
+        File expectedFile = new File(getClass().getResource(expectedJSON).toURI());
+        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile);
+        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile);
         assertFeaturesEqual(expected, actual);
     }
 
@@ -264,7 +281,7 @@ public class ModelConverterTest {
         File inFile = new File(getClass().getResource(originalJSON).toURI());
         File outFile = new File(tempDir.toFile(), expectedProvModel + ".generated");
 
-        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+        FeatureToProvisioning.convert(inFile, outFile, featureProvider);
         List<String> orgLines = Files.readAllLines(outFile.toPath());
         assertNotEquals("Test precondition", "modified!", orgLines.get(orgLines.size() - 1));
 
@@ -272,14 +289,14 @@ public class ModelConverterTest {
         Files.write(outFile.toPath(), "\nmodified!".getBytes(), StandardOpenOption.APPEND);
 
         // Convert again and see that the output file is not modified
-        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+        FeatureToProvisioning.convert(inFile, outFile, featureProvider);
 
         List<String> lines = Files.readAllLines(outFile.toPath());
         assertEquals("modified!", lines.get(lines.size() - 1));
 
         // Modify the modification time of the generated file to be older than the input file
         outFile.setLastModified(inFile.lastModified() - 100000);
-        FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+        FeatureToProvisioning.convert(inFile, outFile, featureProvider);
 
         List<String> owLines = Files.readAllLines(outFile.toPath());
         assertEquals("The file should have been overwritten since the source has modified since it's edit timestamp",
@@ -333,7 +350,7 @@ public class ModelConverterTest {
             assertFalse("File name cannot contain a colon", baseName.contains(":"));
             File genFile = new File(tempDir.toFile(), baseName + ".txt");
             allGenerateProvisioningModelFiles.add(genFile);
-            FeatureToProvisioning.convert(f, genFile, artifactManager);
+            FeatureToProvisioning.convert(f, genFile, featureProvider);
         }
 
         Model expected = readProvisioningModel(orgProvModel);
@@ -348,9 +365,9 @@ public class ModelConverterTest {
         assertEquals("The testing code expects a single output file here", 1, files.size());
         File outFile = files.get(0);
 
-        String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile, artifactManager);
-        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile.getAbsolutePath(), artifactManager);
+        File expectedFile = new File(getClass().getResource(expectedJSON).toURI());
+        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile);
+        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile);
         assertFeaturesEqual(expected, actual);
     }
 
@@ -362,7 +379,7 @@ public class ModelConverterTest {
             addFiles.add(new File(getClass().getResource(af).toURI()));
         }
 
-        FeatureToProvisioning.convert(inFile, outFile, artifactManager, addFiles.toArray(new File[] {}));
+        FeatureToProvisioning.convert(inFile, outFile, featureProvider, addFiles.toArray(new File[] {}));
 
         File expectedFile = new File(getClass().getResource(expectedProvModel).toURI());
         Model expected = readProvisioningModel(expectedFile);
@@ -404,7 +421,7 @@ public class ModelConverterTest {
                 outFile = new File(tempDir.toFile(), inFile.getName() + (counter++) + ".txt.generated");
             } while (outFile.exists());
 
-            FeatureToProvisioning.convert(inFile, outFile, artifactManager);
+            FeatureToProvisioning.convert(inFile, outFile, featureProvider);
             generatedFiles.add(outFile);
         }
         return generatedFiles;
