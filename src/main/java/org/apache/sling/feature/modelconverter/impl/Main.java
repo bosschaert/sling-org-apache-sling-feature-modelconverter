@@ -16,6 +16,12 @@
  */
 package org.apache.sling.feature.modelconverter.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -24,16 +30,11 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.sling.feature.io.ArtifactManager;
-import org.apache.sling.feature.io.ArtifactManagerConfig;
+import org.apache.sling.feature.io.DefaultArtifactManager;
+import org.apache.sling.feature.io.DefaultArtifactManagerConfig;
 import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class Main {
 
@@ -125,12 +126,12 @@ public class Main {
     }
 
     private static ArtifactManager getArtifactManager() {
-        final ArtifactManagerConfig amConfig = new ArtifactManagerConfig();
+        final DefaultArtifactManagerConfig amConfig = new DefaultArtifactManagerConfig();
         if ( repoUrls != null ) {
             amConfig.setRepositoryUrls(repoUrls.split(","));
         }
         try {
-            return ArtifactManager.getArtifactManager(amConfig);
+            return DefaultArtifactManager.getArtifactManager(amConfig);
         } catch ( IOException ioe) {
             LOGGER.error("Unable to create artifact manager " + ioe.getMessage(), ioe);
             System.exit(1);
