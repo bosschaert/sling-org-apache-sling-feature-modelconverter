@@ -16,30 +16,9 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.KeyValueMap;
-import org.apache.sling.feature.builder.BuilderContext;
-import org.apache.sling.feature.builder.FeatureBuilder;
-import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.ArtifactHandler;
-import org.apache.sling.feature.io.ArtifactManager;
-import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -56,6 +35,29 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.FeatureConstants;
+import org.apache.sling.feature.KeyValueMap;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.file.ArtifactHandler;
+import org.apache.sling.feature.io.file.ArtifactManager;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /** Converter that converts the feature model to the provisioning model.
  */
 public class FeatureToProvisioning {
@@ -71,7 +73,7 @@ public class FeatureToProvisioning {
             }
         }
 
-        org.apache.sling.feature.Feature feature = IOUtils.getFeature(inputFile.getAbsolutePath(), am);
+        org.apache.sling.feature.Feature feature = getFeature(inputFile.getAbsolutePath(), am);
         if (feature.getInclude() != null) {
             feature = handleIncludes(feature, additionalInputFiles, am);
         }
@@ -95,11 +97,20 @@ public class FeatureToProvisioning {
                 feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath(), runModes);
     }
 
+    static org.apache.sling.feature.Feature getFeature(final String url, final ArtifactManager am) throws FileNotFoundException, IOException {
+        final ArtifactHandler featureArtifact = am.getArtifactHandler(url);
+        try (final FileReader r = new FileReader(featureArtifact.getFile())) {
+            final org.apache.sling.feature.Feature f = FeatureJSONReader.read(r, featureArtifact.getUrl());
+            return f;
+        }
+
+    }
+
     private static org.apache.sling.feature.Feature handleIncludes(org.apache.sling.feature.Feature feature, File[] additionalFiles, ArtifactManager am) throws IOException {
         Map<ArtifactId, org.apache.sling.feature.Feature> features = new HashMap<>();
 
         for (File f : additionalFiles) {
-            org.apache.sling.feature.Feature af = IOUtils.getFeature(f.getAbsolutePath(), am);
+            org.apache.sling.feature.Feature af = getFeature(f.getAbsolutePath(), am);
             features.put(af.getId(), af);
         }
 
@@ -116,7 +127,7 @@ public class FeatureToProvisioning {
                 try {
                     ArtifactHandler ah = am.getArtifactHandler(id.toMvnUrl());
                     if (ah != null) {
-                        org.apache.sling.feature.Feature feat = IOUtils.getFeature(ah.getUrl(), am);
+                        org.apache.sling.feature.Feature feat = getFeature(ah.getUrl(), am);
                         if (feat != null) {
                             // Cache it
                             features.put(feat.getId(), feat);

@@ -29,9 +29,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.sling.feature.io.ArtifactManager;
-import org.apache.sling.feature.io.DefaultArtifactManager;
-import org.apache.sling.feature.io.DefaultArtifactManagerConfig;
+import org.apache.sling.feature.io.file.ArtifactManager;
+import org.apache.sling.feature.io.file.ArtifactManagerConfig;
 import org.apache.sling.feature.modelconverter.ProvisioningToFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,12 +125,12 @@ public class Main {
     }
 
     private static ArtifactManager getArtifactManager() {
-        final DefaultArtifactManagerConfig amConfig = new DefaultArtifactManagerConfig();
+        final ArtifactManagerConfig amConfig = new ArtifactManagerConfig();
         if ( repoUrls != null ) {
             amConfig.setRepositoryUrls(repoUrls.split(","));
         }
         try {
-            return DefaultArtifactManager.getArtifactManager(amConfig);
+            return ArtifactManager.getArtifactManager(amConfig);
         } catch ( IOException ioe) {
             LOGGER.error("Unable to create artifact manager " + ioe.getMessage(), ioe);
             System.exit(1);

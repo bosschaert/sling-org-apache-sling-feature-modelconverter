@@ -16,35 +16,11 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.io.ArtifactHandler;
-import org.apache.sling.feature.io.ArtifactManager;
-import org.apache.sling.feature.io.ArtifactManagerConfig;
-import org.apache.sling.feature.io.IOUtils;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.ArtifactGroup;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.KeyValueMap;
-import org.apache.sling.provisioning.model.MergeUtility;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.ModelConstants;
-import org.apache.sling.provisioning.model.ModelUtility;
-import org.apache.sling.provisioning.model.ModelUtility.ResolverOptions;
-import org.apache.sling.provisioning.model.ModelUtility.VariableResolver;
-import org.apache.sling.provisioning.model.RunMode;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelReader;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileReader;
@@ -66,11 +42,34 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.io.file.ArtifactHandler;
+import org.apache.sling.feature.io.file.ArtifactManager;
+import org.apache.sling.feature.io.file.ArtifactManagerConfig;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.ArtifactGroup;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.KeyValueMap;
+import org.apache.sling.provisioning.model.MergeUtility;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.ModelConstants;
+import org.apache.sling.provisioning.model.ModelUtility;
+import org.apache.sling.provisioning.model.ModelUtility.ResolverOptions;
+import org.apache.sling.provisioning.model.ModelUtility.VariableResolver;
+import org.apache.sling.provisioning.model.RunMode;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelReader;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class ModelConverterTest {
     private Path tempDir;
@@ -252,8 +251,8 @@ public class ModelConverterTest {
         File outFile = files.get(0);
 
         String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager);
-        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager);
+        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile, artifactManager);
+        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile.getAbsolutePath(), artifactManager);
         assertFeaturesEqual(expected, actual);
     }
 
@@ -350,8 +349,8 @@ public class ModelConverterTest {
         File outFile = files.get(0);
 
         String expectedFile = new File(getClass().getResource(expectedJSON).toURI()).getAbsolutePath();
-        org.apache.sling.feature.Feature expected = IOUtils.getFeature(expectedFile, artifactManager);
-        org.apache.sling.feature.Feature actual = IOUtils.getFeature(outFile.getAbsolutePath(), artifactManager);
+        org.apache.sling.feature.Feature expected = FeatureToProvisioning.getFeature(expectedFile, artifactManager);
+        org.apache.sling.feature.Feature actual = FeatureToProvisioning.getFeature(outFile.getAbsolutePath(), artifactManager);
         assertFeaturesEqual(expected, actual);
     }
 
