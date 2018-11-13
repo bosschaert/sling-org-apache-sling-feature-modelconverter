@@ -43,37 +43,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                <execution>
-                    <id>unpack-dependencies</id>
-                    <phase>prepare-package</phase>
-                    <goals>
-                        <goal>unpack-dependencies</goal>
-                    </goals>
-                    <configuration>
-                        <excludes>META-INF/**</excludes>
-                        <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                        <overWriteReleases>false</overWriteReleases>
-                        <overWriteSnapshots>true</overWriteSnapshots>
-                        <includeArtifactIds>commons-cli,org.apache.sling.feature,org.apache.sling.feature.io,org.apache.sling.commons.johnzon,org.apache.sling.provisioning.model,slf4j-api,slf4j-simple,osgi.core</includeArtifactIds>
-                    </configuration>
-                </execution>
-            </executions>
-            </plugin>
-                <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.apache.sling.feature.modelconverter.impl.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <configuration>
