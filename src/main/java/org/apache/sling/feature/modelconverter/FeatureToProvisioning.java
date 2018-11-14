@@ -16,6 +16,26 @@
  */
 package org.apache.sling.feature.modelconverter;
 
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.FeatureConstants;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -39,27 +59,6 @@ import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.KeyValueMap;
-import org.apache.sling.feature.builder.BuilderContext;
-import org.apache.sling.feature.builder.FeatureBuilder;
-import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Converter that converts the feature model to the provisioning model.
  */
@@ -120,7 +119,7 @@ public class FeatureToProvisioning {
         return FeatureBuilder.assemble(feature, bc);
     }
 
-    private static void convert(Feature f, KeyValueMap variables, Bundles bundles, Configurations configurations, KeyValueMap frameworkProps,
+    private static void convert(Feature f, Map<String,String> variables, Bundles bundles, Configurations configurations, Map<String,String> frameworkProps,
             Extensions extensions, String outputFile, String [] runModes) {
         final Map<String, Feature> additionalFeatures = new HashMap<>();
 
@@ -128,7 +127,7 @@ public class FeatureToProvisioning {
             runModes = null;
         }
         org.apache.sling.provisioning.model.KeyValueMap<String> vars = f.getVariables();
-        for (Map.Entry<String, String> entry : variables) {
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
             vars.put(entry.getKey(), entry.getValue());
         }
 
@@ -148,7 +147,7 @@ public class FeatureToProvisioning {
                 }
             }
 
-            for(final Map.Entry<String, String> prop : bundle.getMetadata()) {
+            for(final Map.Entry<String, String> prop : bundle.getMetadata().entrySet()) {
                 switch (prop.getKey()) {
                     // these are handled separately
                     case "start-level":
@@ -222,7 +221,7 @@ public class FeatureToProvisioning {
         }
 
         // framework properties
-        for(final Map.Entry<String, String> prop : frameworkProps) {
+        for(final Map.Entry<String, String> prop : frameworkProps.entrySet()) {
             String key = prop.getKey();
             int idx = key.indexOf(".runmodes:");
 
@@ -243,7 +242,7 @@ public class FeatureToProvisioning {
                     String[] extRunModes = runModes;
                     final ArtifactId id = cp.getId();
                     final Artifact newCP = new Artifact(id.getGroupId(), id.getArtifactId(), id.getVersion(), id.getClassifier(), id.getType());
-                    for(final Map.Entry<String, String> prop : cp.getMetadata()) {
+                    for(final Map.Entry<String, String> prop : cp.getMetadata().entrySet()) {
                         if (prop.getKey().equals("runmodes")) {
                             if (extRunModes == null) {
                                 extRunModes = prop.getValue().split(",");

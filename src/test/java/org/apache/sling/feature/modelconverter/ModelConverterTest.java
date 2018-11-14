@@ -16,35 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
@@ -75,6 +46,34 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ModelConverterTest {
     private Path tempDir;
@@ -463,10 +462,10 @@ public class ModelConverterTest {
         assertEquals(expected.getVendor(), actual.getVendor());
         assertEquals(expected.getLicense(), actual.getLicense());
 
-        assertFeatureKVMapEquals(expected.getVariables(), actual.getVariables());
+        assertEquals(expected.getVariables(), actual.getVariables());
         assertBundlesEqual(expected.getBundles(), actual.getBundles());
         assertConfigurationsEqual(expected.getConfigurations(), actual.getConfigurations(), expected.getBundles(), actual.getBundles());
-        assertFeatureKVMapEquals(expected.getFrameworkProperties(), actual.getFrameworkProperties());
+        assertEquals(expected.getFrameworkProperties(), actual.getFrameworkProperties());
         assertExtensionEqual(expected.getExtensions(), actual.getExtensions());
 
         // Ignore caps and reqs, includes and here since they cannot come from the prov model.
@@ -481,7 +480,7 @@ public class ModelConverterTest {
                 org.apache.sling.feature.Artifact ac = it2.next();
                 if (ac.getId().equals(ex.getId())) {
                     found = true;
-                    assertFeatureKVMapEquals(ex.getMetadata(), ac.getMetadata());
+                    assertEquals(ex.getMetadata(), ac.getMetadata());
                     break;
                 }
             }
@@ -658,16 +657,6 @@ public class ModelConverterTest {
         return m;
     }
 
-    private Map<String, String> featureKvToMap(org.apache.sling.feature.KeyValueMap kvm) {
-        Map<String, String> m = new HashMap<>();
-
-        for (Map.Entry<String, String> entry : kvm) {
-            m.put(entry.getKey(), entry.getValue());
-        }
-
-        return m;
-    }
-
     private boolean artifactGroupsEquals(String featureName, ArtifactGroup g1, ArtifactGroup g2) {
         int sl1 = effectiveStartLevel(featureName, g1.getStartLevel());
         int sl2 = effectiveStartLevel(featureName, g2.getStartLevel());
@@ -712,11 +701,6 @@ public class ModelConverterTest {
 
     private void assertKVMapEquals(KeyValueMap<String> expected, KeyValueMap<String> actual) {
         assertEquals(kvToMap(expected), kvToMap(actual));
-    }
-
-    private void assertFeatureKVMapEquals(org.apache.sling.feature.KeyValueMap expected,
-            org.apache.sling.feature.KeyValueMap actual) {
-        assertEquals(featureKvToMap(expected), featureKvToMap(actual));
     }
 
     private void assertExtensionEqual(Extensions expected, Extensions actual) {

@@ -16,21 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
@@ -38,7 +23,6 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.KeyValueMap;
 import org.apache.sling.feature.io.file.ArtifactHandler;
 import org.apache.sling.feature.io.file.ArtifactManager;
 import org.apache.sling.feature.io.file.ArtifactManagerConfig;
@@ -59,6 +43,21 @@ import org.apache.sling.provisioning.model.Traceable;
 import org.apache.sling.provisioning.model.io.ModelReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /** Converter that converts the provisioning model to the feature model.
  */
@@ -294,11 +293,11 @@ public class ProvisioningToFeature {
     }
 
     private static void buildFromFeature(final Feature feature,
-            final KeyValueMap variables,
+            final Map<String,String> variables,
             final Bundles bundles,
             final Configurations configurations,
             final Extensions extensions,
-            final KeyValueMap properties) {
+            final Map<String,String> properties) {
         for (Iterator<Map.Entry<String, String>> it = feature.getVariables().iterator(); it.hasNext(); ) {
             Entry<String, String> entry = it.next();
             variables.put(entry.getKey(), entry.getValue());
