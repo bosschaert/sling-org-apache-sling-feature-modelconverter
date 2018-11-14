@@ -16,27 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.KeyValueMap;
-import org.apache.sling.feature.builder.BuilderContext;
-import org.apache.sling.feature.builder.FeatureBuilder;
-import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -60,6 +39,27 @@ import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.FeatureConstants;
+import org.apache.sling.feature.KeyValueMap;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Converter that converts the feature model to the provisioning model.
  */
@@ -115,7 +115,7 @@ public class FeatureToProvisioning {
                 .map(FeatureToProvisioning::getFeature)
                 .collect(Collectors.toMap(org.apache.sling.feature.Feature::getId, Function.identity()));
 
-        BuilderContext bc = new BuilderContext(id -> features.containsKey(id) ? features.get(id) : fp.provide(id), null);
+        BuilderContext bc = new BuilderContext(id -> features.containsKey(id) ? features.get(id) : fp.provide(id));
 
         return FeatureBuilder.assemble(feature, bc);
     }
