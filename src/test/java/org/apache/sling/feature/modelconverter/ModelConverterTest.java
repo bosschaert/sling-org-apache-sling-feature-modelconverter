@@ -495,17 +495,9 @@ public class ModelConverterTest {
             boolean found = false;
             for (Iterator<org.apache.sling.feature.Configuration> it2 = actual.iterator(); it2.hasNext(); ) {
                 org.apache.sling.feature.Configuration ac = it2.next();
-                if (ex.getPid() != null) {
-                    if (ex.getPid().equals(ac.getPid())) {
-                        found = true;
-                        assertConfigProps(ex, ac, exBundles, acBundles);
-                    }
-                } else {
-                    if (ex.getFactoryPid().equals(ac.getFactoryPid()) &&
-                            ex.getName().equals(ac.getName())) {
-                        found = true;
-                        assertConfigProps(ex, ac, exBundles, acBundles);
-                    }
+                if (ex.getPid().equals(ac.getPid())) {
+                    found = true;
+                    assertConfigProps(ex, ac, exBundles, acBundles);
                 }
             }
             assertTrue(found);

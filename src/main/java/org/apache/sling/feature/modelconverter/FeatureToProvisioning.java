@@ -16,26 +16,6 @@
  */
 package org.apache.sling.feature.modelconverter;
 
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
-import org.apache.sling.feature.builder.BuilderContext;
-import org.apache.sling.feature.builder.FeatureBuilder;
-import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.apache.sling.provisioning.model.Artifact;
-import org.apache.sling.provisioning.model.Configuration;
-import org.apache.sling.provisioning.model.Feature;
-import org.apache.sling.provisioning.model.Model;
-import org.apache.sling.provisioning.model.Section;
-import org.apache.sling.provisioning.model.io.ModelWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -59,6 +39,26 @@ import javax.json.JsonArray;
 import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Bundles;
+import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.Extensions;
+import org.apache.sling.feature.FeatureConstants;
+import org.apache.sling.feature.builder.BuilderContext;
+import org.apache.sling.feature.builder.FeatureBuilder;
+import org.apache.sling.feature.builder.FeatureProvider;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.provisioning.model.Artifact;
+import org.apache.sling.provisioning.model.Configuration;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.Section;
+import org.apache.sling.provisioning.model.io.ModelWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Converter that converts the feature model to the provisioning model.
  */
@@ -194,14 +194,14 @@ public class FeatureToProvisioning {
             final Configuration c;
 
             List<String> runModeList = new ArrayList<>();
-            if ( cfg.isFactoryConfiguration() ) {
-                String name = decodeRunModes(cfg.getName(), runModeList);
-                c = new Configuration(name, cfg.getFactoryPid());
+            if (org.apache.sling.feature.Configuration.isFactoryConfiguration(cfg.getPid())) {
+                String name = decodeRunModes(org.apache.sling.feature.Configuration.getName(cfg.getPid()), runModeList);
+                c = new Configuration(name, org.apache.sling.feature.Configuration.getFactoryPid(cfg.getPid()));
             } else {
                 String pid = decodeRunModes(cfg.getPid(), runModeList);
                 c = new Configuration(pid, null);
             }
-            final Enumeration<String> keys = cfg.getProperties().keys();
+            final Enumeration<String> keys = cfg.getConfigurationProperties().keys();
             while ( keys.hasMoreElements() ) {
                 String key = keys.nextElement();
                 Object val = cfg.getProperties().get(key);

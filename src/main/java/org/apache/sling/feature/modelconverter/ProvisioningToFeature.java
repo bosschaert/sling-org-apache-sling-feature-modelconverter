@@ -351,7 +351,7 @@ public class ProvisioningToFeature {
 
                 final org.apache.sling.feature.Configuration newCfg;
                 if ( cfg.getFactoryPid() != null ) {
-                    newCfg = new org.apache.sling.feature.Configuration(cfg.getFactoryPid(), pid);
+                    newCfg = new org.apache.sling.feature.Configuration(cfg.getFactoryPid() + '~' + pid);
                 } else {
                     newCfg = new org.apache.sling.feature.Configuration(pid);
                 }
