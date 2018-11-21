@@ -46,7 +46,6 @@ import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.FeatureConstants;
 import org.apache.sling.feature.builder.BuilderContext;
 import org.apache.sling.feature.builder.FeatureBuilder;
 import org.apache.sling.feature.builder.FeatureProvider;
@@ -237,7 +236,7 @@ public class FeatureToProvisioning {
 
         // extensions: content packages and repoinit
         for(final Extension ext : extensions) {
-            if ( FeatureConstants.EXTENSION_NAME_CONTENT_PACKAGES.equals(ext.getName()) ) {
+            if (Extension.EXTENSION_NAME_CONTENT_PACKAGES.equals(ext.getName())) {
                 for(final org.apache.sling.feature.Artifact cp : ext.getArtifacts() ) {
                     String[] extRunModes = runModes;
                     final ArtifactId id = cp.getId();
@@ -254,7 +253,7 @@ public class FeatureToProvisioning {
                     f.getOrCreateRunMode(extRunModes).getOrCreateArtifactGroup(20).add(newCP);
                 }
 
-            } else if ( FeatureConstants.EXTENSION_NAME_REPOINIT.equals(ext.getName()) ) {
+            } else if (Extension.EXTENSION_NAME_REPOINIT.equals(ext.getName())) {
                 final Section section = new Section("repoinit");
                 if (ext.getType() == ExtensionType.TEXT) {
                     section.setContents(ext.getText());
