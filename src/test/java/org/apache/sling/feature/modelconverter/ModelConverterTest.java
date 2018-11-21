@@ -468,7 +468,7 @@ public class ModelConverterTest {
         assertEquals(expected.getFrameworkProperties(), actual.getFrameworkProperties());
         assertExtensionEqual(expected.getExtensions(), actual.getExtensions());
 
-        // Ignore caps and reqs, includes and here since they cannot come from the prov model.
+        // Ignore caps and reqs, prototype and here since they cannot come from the prov model.
     }
 
     private void assertBundlesEqual(Bundles expected, Bundles actual) {

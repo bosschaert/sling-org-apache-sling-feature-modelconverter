@@ -75,8 +75,8 @@ public class FeatureToProvisioning {
         }
 
         org.apache.sling.feature.Feature feature = getFeature(inputFile);
-        if (feature.getInclude() != null) {
-            feature = handleIncludes(feature, additionalInputFiles, fp);
+        if (feature.getPrototype() != null) {
+            feature = handlePrototype(feature, additionalInputFiles, fp);
         }
 
         Object featureNameVar = feature.getVariables().remove(PROVISIONING_MODEL_NAME_VARIABLE);
@@ -107,7 +107,7 @@ public class FeatureToProvisioning {
 
     }
 
-    private static org.apache.sling.feature.Feature handleIncludes(org.apache.sling.feature.Feature feature, File[] additionalFiles, FeatureProvider fp) throws UncheckedIOException {
+    private static org.apache.sling.feature.Feature handlePrototype(org.apache.sling.feature.Feature feature, File[] additionalFiles, FeatureProvider fp) throws UncheckedIOException {
         Map<ArtifactId, org.apache.sling.feature.Feature> features =
             Stream.of(additionalFiles)
                 .map(FeatureToProvisioning::getFeature)
