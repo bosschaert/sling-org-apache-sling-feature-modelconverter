@@ -42,10 +42,14 @@ import org.apache.sling.provisioning.model.Section;
 import org.apache.sling.provisioning.model.io.ModelReader;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
@@ -68,6 +72,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -76,18 +81,33 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ModelConverterTest {
+
+    private static Logger LOGGER = LoggerFactory.getLogger(ModelConverterTest.class);
+
+    @Rule
+    public TestName name = new TestName();
+
     private Path tempDir;
     private ArtifactManager artifactManager;
     private FeatureProvider featureProvider;
 
+    // If there is a test output folder provided (test.prov.files.tempdir) then the tests can fail because of conflicts
+    // and it is hard to figure out what the test did. So we place them in their own folder
+    private static Random random = new Random(System.currentTimeMillis());
+
     @Before
     public void setup() throws Exception {
         String tmpDir = System.getProperty("test.prov.files.tempdir");
+        Path parent;
         if (tmpDir != null) {
-            tempDir = Paths.get(tmpDir);
-            System.out.println("*** Using directory for generated files: " + tempDir);
+            parent = Paths.get(tmpDir);
+            LOGGER.info("Using provided directory for generated files: '{}'", parent);
+            // Create sub folder with test method name in it to separate the test output from each other
+            File child = new File(parent.toFile(), "test-" + name.getMethodName() + "-" + random.nextInt(1000));
+            if(!child.mkdir()) { fail("Could not create sub folder: " + child.getPath()); }
+            tempDir = child.toPath();
         } else {
-            tempDir = Files.createTempDirectory(getClass().getSimpleName());
+            tempDir = Files.createTempDirectory(getClass().getSimpleName() + "-" + name.getMethodName());
         }
         artifactManager = ArtifactManager.getArtifactManager(
                 new ArtifactManagerConfig());
@@ -106,7 +126,10 @@ public class ModelConverterTest {
 
     @After
     public void tearDown() throws Exception {
-        if(System.getProperty("test.prov.files.tempdir") == null) {
+        boolean doDelete = System.getProperty("test.prov.files.tempdir") == null;
+        String noDelete = System.getProperty("test.prov.no.delete");
+        doDelete = doDelete && !"true".equalsIgnoreCase(noDelete);
+        if(doDelete) {
             // Delete the temp dir again
             Files.walk(tempDir)
                 .sorted(Comparator.reverseOrder())
@@ -248,6 +271,7 @@ public class ModelConverterTest {
         }
 
         for (File f : filesDir.listFiles((d, n) -> n.endsWith(".txt"))) {
+            LOGGER.info(name.getMethodName() + ", test file: '{}'", f);
             testConvertFromProvModelRoundTrip(f);
         }
     }
@@ -304,8 +328,10 @@ public class ModelConverterTest {
 
     @Test
     public void testConvertToFeature() throws Exception {
+        System.out.println("*** Convert to Feature: " + tempDir.toString());
         File inFile = new File(getClass().getResource("/boot.txt").toURI());
 
+        // If this test is run with others it might conflict with existing files -> create sub folder
         List<File> files = ProvisioningToFeature.convert(inFile, tempDir.toFile(), Collections.emptyMap());
         assertEquals("The testing code expects a single output file here", 1, files.size());
         File outFile = files.get(0);
@@ -316,10 +342,12 @@ public class ModelConverterTest {
         // Append to the output file:
         Files.write(outFile.toPath(), "\nmodified!".getBytes(), StandardOpenOption.APPEND);
 
+        System.out.println("*** Convert Again ***");
         // Convert again and see that the output file is not modified
         List<File> files2 = ProvisioningToFeature.convert(inFile, tempDir.toFile(), Collections.emptyMap());
         assertEquals("Should return the same file list", files, files2);
 
+        System.out.println("*** Check if not overwritten ***");
         List<String> lines = Files.readAllLines(outFile.toPath());
         assertEquals("modified!", lines.get(lines.size() - 1));
 
@@ -339,7 +367,7 @@ public class ModelConverterTest {
     }
 
     public void testConvertFromProvModelRoundTrip(File orgProvModel) throws Exception {
-        System.out.println("*** Roundtrip converting: " + orgProvModel.getName());
+        LOGGER.info("Roundtrip converting of file: '{}'", orgProvModel.getName());
         List<File> allGenerateProvisioningModelFiles = new ArrayList<>();
 
         List<File> generated = ProvisioningToFeature.convert(orgProvModel, tempDir.toFile(), Collections.emptyMap());
@@ -405,6 +433,8 @@ public class ModelConverterTest {
         List<File> generatedFiles1 = convertFeatureFilesToProvisioningModel(jsonFiles1);
         List<File> generatedFiles2 = convertFeatureFilesToProvisioningModel(jsonFiles2);
 
+        LOGGER.debug("Generated Files 1: '{}'", generatedFiles1);
+        LOGGER.debug("Generated Files 2: '{}'", generatedFiles2);
         Model actual1 = readProvisioningModel(generatedFiles1);
         Model actual2 = readProvisioningModel(generatedFiles2);
         assertModelsEqual(actual1, actual2);
@@ -540,17 +570,17 @@ public class ModelConverterTest {
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getVersion(), actual.getVersion());
         assertEquals(expected.getType(), actual.getType());
-        assertRunModesEqual(expected.getName(), expected.getRunModes(), actual.getRunModes());
+        assertRunModesEqual(expected.getName(), expected.getRunModes(), actual.getRunModes(), actual.getVariables());
         assertKVMapEquals(expected.getVariables(), actual.getVariables());
         assertSectionsEqual(expected.getAdditionalSections(), actual.getAdditionalSections());
     }
 
-    private void assertRunModesEqual(String featureName, List<RunMode> expected, List<RunMode> actual) {
+    private void assertRunModesEqual(String featureName, List<RunMode> expected, List<RunMode> actual, KeyValueMap<String> actualVariables) {
         assertEquals(expected.size(), actual.size());
         for (RunMode rm : expected) {
             boolean found = false;
             for (RunMode arm : actual) {
-                if (runModesEqual(featureName, rm, arm)) {
+                if (runModesEqual(featureName, rm, arm, actualVariables)) {
                     found = true;
                     break;
                 }
@@ -562,7 +592,7 @@ public class ModelConverterTest {
         }
     }
 
-    private boolean runModesEqual(String featureName, RunMode rm1, RunMode rm2) {
+    private boolean runModesEqual(String featureName, RunMode rm1, RunMode rm2, KeyValueMap<String> variables2) {
         if (rm1.getNames() == null) {
             if (rm2.getNames() != null)
                 return false;
@@ -572,20 +602,21 @@ public class ModelConverterTest {
 
             HashSet<String> names1 = new HashSet<>(Arrays.asList(rm1.getNames()));
             HashSet<String> names2 = new HashSet<>(Arrays.asList(rm2.getNames()));
-
+            LOGGER.debug("Check Run Modes Name: first: '{}', second: '{}'", names1, names2);
             if (!names1.equals(names2))
                 return false;
         }
 
         List<ArtifactGroup> ag1 = rm1.getArtifactGroups();
         List<ArtifactGroup> ag2 = rm2.getArtifactGroups();
+        LOGGER.debug("Check Artifact Group Size: first: '{}', second: '{}'", ag1.size(), ag2.size());
         if (ag1.size() != ag2.size())
             return false;
 
         for (ArtifactGroup g1 : ag1) {
             boolean found = false;
             for (ArtifactGroup g2 : ag2) {
-                if (artifactGroupsEquals(featureName, g1, g2)) {
+                if (artifactGroupsEquals(featureName, g1, g2, variables2)) {
                     found = true;
                     break;
                 }
@@ -598,6 +629,7 @@ public class ModelConverterTest {
         rm1.getConfigurations().iterator().forEachRemaining(configs1::add);
         List<Configuration> configs2 = new ArrayList<>();
         rm2.getConfigurations().iterator().forEachRemaining(configs2::add);
+        LOGGER.debug("Check Artifact Configuration Size: first: '{}', second: '{}'", configs1.size(), configs2.size());
         if (configs1.size() != configs2.size())
             return false;
 
@@ -636,6 +668,7 @@ public class ModelConverterTest {
         Map<String, String> m1 = kvToMap(rm1.getSettings());
         Map<String, String> m2 = kvToMap(rm2.getSettings());
 
+        LOGGER.debug("Check Artifact KV to Map: first: '{}', second: '{}'", m1, m2);
         return m1.equals(m2);
     }
 
@@ -649,9 +682,10 @@ public class ModelConverterTest {
         return m;
     }
 
-    private boolean artifactGroupsEquals(String featureName, ArtifactGroup g1, ArtifactGroup g2) {
+    private boolean artifactGroupsEquals(String featureName, ArtifactGroup g1, ArtifactGroup g2, KeyValueMap<String> variables2) {
         int sl1 = effectiveStartLevel(featureName, g1.getStartLevel());
         int sl2 = effectiveStartLevel(featureName, g2.getStartLevel());
+        LOGGER.debug("Check Artifact Group Start Level, feature name: '{}', first: '{}', second: '{}'", featureName, sl1, sl2);
         if (sl1 != sl2)
             return false;
 
@@ -663,12 +697,51 @@ public class ModelConverterTest {
 
         for (int i=0; i<al1.size(); i++) {
             Artifact a1 = al1.get(i);
+            String a1Version = a1.getVersion();
+            String resolvedVersion = a1Version;
+            Artifact a1Resolved = null;
+            if(a1Version.startsWith("${") && a1Version.endsWith("}")) {
+                String variableName = a1Version.substring(2, a1Version.length() - 1);
+                String variableValue = variables2.get(variableName);
+                LOGGER.debug("AG Variable Name: '{}', Variable Value: '{}'", variableName, variableValue);
+                if(variableName != null) {
+                    a1Resolved = new Artifact(a1.getGroupId(), a1.getArtifactId(), variableValue, a1.getClassifier(), a1.getType());
+                }
+            }
             boolean found = false;
             for (Iterator<Artifact> it = al2.iterator(); it.hasNext(); ) {
                 Artifact a2 = it.next();
+//                LOGGER.debug("Check Artifacts, first: '{}', second: '{}'", a1, a2);
+                String a2Version = a2.getVersion();
+                String resolvedVersion2 = a2Version;
+                Artifact a2Resolved = null;
+                if(a2Version.startsWith("${") && a2Version.endsWith("}")) {
+                    String variableName = a2Version.substring(2, a2Version.length() - 1);
+                    String variableValue = variables2.get(variableName);
+                    LOGGER.debug("AG 2 Variable Name: '{}', Variable Value: '{}'", variableName, variableValue);
+                    if(variableName != null) {
+                        a2Resolved = new Artifact(a2.getGroupId(), a2.getArtifactId(), variableValue, a2.getClassifier(), a2.getType());
+                    }
+                }
+                LOGGER.debug("Check Artifacts\nfirst  MVN URL: '{}'\nsecond MVN URL: '{}'", a1.toMvnUrl(), a2.toMvnUrl());
                 if (a1.compareTo(a2) == 0) {
                     found = true;
                     it.remove();
+                } else {
+                    // If we have a resolved AG 1 then compare this one as well
+                    if (a1Resolved != null) {
+                        if (a1Resolved.compareTo(a2) == 0) {
+                            LOGGER.debug("Resolved AG matches: '{}' -> remove", a1Resolved);
+                            found = true;
+                            it.remove();
+                        }
+                    } else if (a2Resolved != null) {
+                        if (a1.compareTo(a2Resolved) == 0) {
+                            LOGGER.debug("Resolved AG 2 matches: '{}' -> remove", a2Resolved);
+                            found = true;
+                            it.remove();
+                        }
+                    }
                 }
             }
             if (!found) {
@@ -677,6 +750,7 @@ public class ModelConverterTest {
         }
 
         // Should have found all artifacts
+        LOGGER.debug("Not found AGs: '{}'", al2);
         return (al2.size() == 0);
     }
 
@@ -708,8 +782,15 @@ public class ModelConverterTest {
             assertEquals(ex.isRequired(), ac.isRequired());
 
             if (ex.getType() == ExtensionType.TEXT) {
-                String exTxt = ex.getText().replaceAll("\\s+", "");
-                String acTxt = ac.getText().replaceAll("\\s+", "");
+                String exTxt;
+                String acTxt;
+                if("repoinit".equals(ex.getName())) {
+                    exTxt = ex.getText().replaceAll("\\s+", "").replaceAll("\"\",", "");
+                    acTxt = ac.getText().replaceAll("\\s+", "").replaceAll("\"\",", "");
+                } else {
+                    exTxt = ex.getText().replaceAll("\\s+", "");
+                    acTxt = ac.getText().replaceAll("\\s+", "");
+                }
                 assertEquals(exTxt, acTxt);
             } else if (ex.getType() == ExtensionType.JSON) {
                 String exJson = ex.getJSON().replaceAll("\\s+", "").replaceAll("\"\",", "");

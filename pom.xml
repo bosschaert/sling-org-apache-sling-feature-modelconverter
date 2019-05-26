@@ -49,7 +49,81 @@
                     <excludes>
                         <exclude>readme.md</exclude>
                         <exclude>src/test/resources/**</exclude>
+                        <exclude>src/main/legal/NOTICE-with-deps</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.16</version>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <configuration>
+                            <fileTemplate>${basedir}/src/main/legal/LICENSE-with-deps</fileTemplate>
+                            <thirdPartyFilename>LICENSE-with-deps</thirdPartyFilename>
+                            <sortArtifactByName>true</sortArtifactByName>
+                            <excludedScopes>test</excludedScopes>
+                            <licenseMerges>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache License, Version 2.0|Apache Public License 2.0</licenseMerge>
+                            </licenseMerges>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>assemble</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <repositoryLayout>flat</repositoryLayout>
+                    <repositoryName>lib</repositoryName>
+                    <useWildcardClassPath>true</useWildcardClassPath>
+                    <extraJvmArguments>-Dproject.artifactId=${project.artifactId} -Dproject.version=${project.version} -Dbuild.timestamp=${maven.build.timestamp} -Duser.timezone=UTC -Dfile.encoding=UTF-8</extraJvmArguments>
+                    <defaultJvmSettings>-Xms500m -Xmx500m -XX:PermSize=128m -XX:-UseGCOverheadLimit</defaultJvmSettings>
+                    <licenseHeaderFile>${basedir}/src/main/legal/license-header</licenseHeaderFile>
+                    <programs>
+                        <program>
+                            <mainClass>org.apache.sling.feature.modelconverter.Main</mainClass>
+                            <name>pm2fm</name>
+                        </program>
+                    </programs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <finalName>${project.build.finalName}</finalName>
+                    <tarLongFileMode>gnu</tarLongFileMode>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>${basedir}/src/main/assembly/bin.xml</descriptor>
+                    </descriptors>
                 </configuration>
             </plugin>
         </plugins>
@@ -64,6 +138,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -90,7 +169,14 @@
             <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
-        
+
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>3.6.0</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
@@ -113,11 +199,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>2.18.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
