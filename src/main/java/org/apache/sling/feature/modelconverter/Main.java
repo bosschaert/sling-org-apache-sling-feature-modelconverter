@@ -17,6 +17,7 @@
 package org.apache.sling.feature.modelconverter;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,6 +71,12 @@ public class Main implements Runnable {
     @Option(names = { "-D", "--noProvisioningModelName" }, description = "If flagged then the Provisioning Model Name is not added'")
     private boolean noProvisioningModelName;
 
+    @Option(names = { "-e", "--excludeBundles" }, description = "List of Bundles and Bundle Configurations to be excluded'")
+    private List<String> excludeBundles;
+
+    @Option(names = { "-r", "--runModes" }, description = "List of Runmodes of the Feature Model. If set only configuration with that runmodes are used w/o a .runmdoes. suffix")
+    private List<String> runModes;
+
     private Pattern pattern = Pattern.compile("^(.*?):(.*?)=(.*?)$");
 
     @Override
@@ -114,6 +121,12 @@ public class Main implements Runnable {
                 }
             }
             options.put("addFrameworkProperties", frameworkPropertiesMap);
+            options.put("excludeBundles", excludeBundles);
+            LOGGER.info("Excluded Bundles: '{}'", excludeBundles);
+            options.put("runModes", runModes == null ? new ArrayList<>() : runModes);
+            LOGGER.info("Runmodes: '{}'", runModes);
+
+            // Start the Conversion
             for(File file: provisioningFiles) {
                 LOGGER.info("Handle File: '{}'", file.getAbsolutePath());
                 ProvisioningToFeature.convert(file, featureModelsOutputDirectory, options);

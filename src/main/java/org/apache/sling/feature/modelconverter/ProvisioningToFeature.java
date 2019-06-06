@@ -303,7 +303,9 @@ public class ProvisioningToFeature {
             final Map<String,String> variables,
             final List<String> dropVariables,
             final Bundles bundles,
+            final List<String> excludeBundles,
             final Configurations configurations,
+            final List<String> currentRunModes,
             final Extensions extensions,
             final Map<String,String> properties) {
         for (Iterator<Map.Entry<String, String>> it = feature.getVariables().iterator(); it.hasNext(); ) {
@@ -322,9 +324,34 @@ public class ProvisioningToFeature {
 
         Extension cpExtension = extensions.getByName(Extension.EXTENSION_NAME_CONTENT_PACKAGES);
         for(final RunMode runMode : feature.getRunModes() ) {
+            int runModelFilteringMode = 0; // Default behavior with no filtering
+            String[] runModeNames = runMode.getNames();
+            if(!currentRunModes.isEmpty()) {
+                if(runModeNames == null || runModeNames.length == 0) {
+                    runModelFilteringMode = 1; // No Runmode configured -> write as usual
+                } else {
+                    for(String runModeName: runModeNames) {
+                        if(currentRunModes.contains(runModeName)) {
+                            runModelFilteringMode = 2; // Matching Runmode -> write out w/o run mode suffix
+                        }
+                    }
+                    if(runModelFilteringMode != 2) {
+                        runModelFilteringMode = -1; // Ignore this runmode as it does not have a match
+                    }
+                }
+            }
+            if(runModelFilteringMode < 0) {
+                continue;
+            }
             for(final ArtifactGroup group : runMode.getArtifactGroups()) {
                 for(final Artifact artifact : group) {
                     ArtifactId id = ArtifactId.fromMvnUrl(artifact.toMvnUrl());
+                    String artifactId = id.getArtifactId();
+                    LOGGER.info("Check Artitfact Id: '{}' if excluded by: '{}'", artifactId, excludeBundles);
+                    if(excludeBundles.contains(artifactId)) {
+                        // If bundle is excluded then go to the next one
+                        continue;
+                    }
                     String version = id.getVersion();
                     if(version.startsWith("${") && version.endsWith("}")) {
                         // Replace Variable with value if found
@@ -369,8 +396,13 @@ public class ProvisioningToFeature {
                     pid = ".." + pid.substring(1);
                 }
 
-                final String[] runModeNames = runMode.getNames();
-                if (runModeNames != null) {
+                LOGGER.info("Check Configuration Id: '{}' if excluded by: '{}'", pid, excludeBundles);
+                if(excludeBundles.contains(pid)) {
+                    // If configuration is excluded then go to the next one
+                    continue;
+                }
+
+                if (runModeNames != null && runModelFilteringMode != 2) {
                     pid = pid + ".runmodes." + String.join(".", runModeNames);
                     pid = pid.replaceAll("[:]", "..");
                 }
@@ -396,8 +428,7 @@ public class ProvisioningToFeature {
             }
 
             for(final Map.Entry<String, String> prop : runMode.getSettings()) {
-                String[] runModeNames = runMode.getNames();
-                if (runModeNames == null) {
+                if (runModeNames == null && runModelFilteringMode != 2) {
                     properties.put(prop.getKey(), prop.getValue());
                 } else {
                     properties.put(prop.getKey() + ".runmodes:" + String.join(",", runModeNames),
@@ -457,7 +488,9 @@ public class ProvisioningToFeature {
         String nameOption = getOption(options, "name", "");
         boolean useProvidedVersion = getOption(options, "useProvidedVersion", false);
         List<String> dropVariables = getOption(options, "dropVariables", new ArrayList<>());
+        List<String> excludeBundles = getOption(options, "excludeBundles", new ArrayList<>());
         Map<String,Map<String,String>> addFrameworkProperties = getOption(options, "addFrameworkProperties", new HashMap<String,Map<String, String>>());
+        List<String> runModes = getOption(options, "runModes", new ArrayList<>());
 
         for(final Feature feature : model.getFeatures() ) {
             final String idString;
@@ -502,7 +535,7 @@ public class ProvisioningToFeature {
                     }
                 }
             }
-            buildFromFeature(feature, variables, dropVariables, f.getBundles(), f.getConfigurations(), f.getExtensions(), frameworkProperties);
+            buildFromFeature(feature, variables, dropVariables, f.getBundles(), excludeBundles, f.getConfigurations(), runModes, f.getExtensions(), frameworkProperties);
 
             if (!f.getId().getArtifactId().equals(feature.getName())) {
                 f.getVariables().put(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE, feature.getName());
