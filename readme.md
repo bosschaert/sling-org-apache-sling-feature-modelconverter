@@ -59,30 +59,34 @@ $ ./bin/pm2fm -h
 Usage: pm2fm [-DhV] [-g=<groupId>] -i=<provisioningModelsInputDirectory>
              [-n=<name>] -o=<featureModelsOutputDirectory> [-v=<version>]
              [-a=<addFrameworkProperties>]... [-d=<dropVariables>]...
+             [-e=<excludeBundles>]... [-r=<runModes>]...
 Apache Sling Provisioning Model to Sling Feature Model converter
-  -a, --addFrameworkProperties=<addFrameworkProperties>
-                             Adds Framework Properties to Feature Models. Format:
-                               <Model Name>:<Property Name>=<value>
-  -d, --dropVariables=<dropVariables>
-                             All matching Variables (by name) in a Feature Model are
-                               dropped
+  -a, --addFrameworkProperty=<addFrameworkProperties>
+                             Adds Framework Property to Feature Models. Format:
+                               <Model Name>:<Property Name>=<value> (repeat for more)
+  -d, --dropVariable=<dropVariables>
+                             Variable (by name) in a Feature Model to be excluded
+                               (repeat for more)
   -D, --noProvisioningModelName
-                             If flagged then the Provisioning Model Name is not
-                               added'
+                             If flagged then the Provisioning Model Name is not added
+  -e, --excludeBundle=<excludeBundles>
+                             Bundle and/or Bundle Configuration to be excluded
+                               (repeat for more)
   -g, --group-id=<groupId>   Overwriting the Group Id of the Model ID
-  -h, --help                 Display the usage message.
+  -h, --help                 Display the usage message
   -i, --provisining-input-directory=<provisioningModelsInputDirectory>
-                             The input directory where the Provisioning File are.
-  -n, --name=<name>          Sets a general Name for all converted Models. This also
+                             The input directory where the Provisioning File are
+  -n, --name=<name>          Sets a General Name for all converted Models. This also
                                means that the name is placed in the classifier
   -o, --features-output-directory=<featureModelsOutputDirectory>
                              The output directory where the Feature File will be
-                               generated.
+                               generated in
+  -r, --runMode=<runModes>   Runmode to add to this build (all no-runmodes are
+                               included by default, repeat for more)
   -v, --version=<version>    Overwriting the Version of the Model ID
   -V, --useProvidedVersion   If flagged then the provided version will override any
-                               given version from Provisioning Model'
-Copyright(c) 2019 The Apache Software Foundation.
-```
+                               given version from Provisioning Model
+Copyright(c) 2019 The Apache Software Foundation.```
 
 to see all the available options; a sample execution could look like:
 
@@ -96,8 +100,18 @@ $sh ./bin/pm2fm \
     -n "\${project.artifactId}" \
     -D \
     -a "launchpad:felix.systempackages.substitution=true" \
-    -a "launchpad:felix.systempackages.calculate.uses=true"
+    -a "launchpad:felix.systempackages.calculate.uses=true" \
+    -r ":standalone" \
+    -r "oak_tar"
 ```
+
+**Attention**: the current Model Converter is adding runmode bundles and
+configurations with a **id** that has a suffix of **.runmode.<runmode name>**
+which will not work with the Feature Launcher as the Feature Model does not
+support runtime selection / configuration.
+The **-r** argument provides the ability to select the desired runmodes which
+then does not add the suffix to the id and drop all other runmodes. See
+SLING-8479 for more on this.
 
 **Note**: this will generate all the Feature Models for the current Sling
 Provisioning (Sling (PM) Starter). The groupId, artifactId and version is
@@ -126,6 +140,14 @@ Argument Files for Long Command Lines:
 # Add Launchpad Framework Properties to make bundles with Java dependencies activate
 -a "launchpad:felix.systempackages.substitution=true"
 -a "launchpad:felix.systempackages.calculate.uses=true"
+# Exclude Lauchpad Installer (provided by the feature launcher) and Repository
+# Initializer as this is embedded in the configuration file
+-e "org.apache.sling.launchpad.installer"
+-e "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer"
+# This is a build for the standalone OAK Segment Node Store which needs
+# these two runmodes but we dropped all others like :webapp or oak_mongo
+-r "oak_tar"
+-r ":standalone"
 ```
 
 then execute the command

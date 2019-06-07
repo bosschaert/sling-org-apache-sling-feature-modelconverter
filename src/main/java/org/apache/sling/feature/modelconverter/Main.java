@@ -41,13 +41,13 @@ public class Main implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    @Option(names = { "-h", "--help" }, usageHelp = true, description = "Display the usage message.")
+    @Option(names = { "-h", "--help" }, usageHelp = true, description = "Display the usage message")
     private boolean helpRequested;
 
-    @Option(names = { "-i", "--provisining-input-directory" }, description = "The input directory where the Provisioning File are.", required = true)
+    @Option(names = { "-i", "--provisining-input-directory" }, description = "The input directory where the Provisioning File are", required = true)
     private File provisioningModelsInputDirectory;
 
-    @Option(names = { "-o", "--features-output-directory" }, description = "The output directory where the Feature File will be generated.", required = true)
+    @Option(names = { "-o", "--features-output-directory" }, description = "The output directory where the Feature File will be generated in", required = true)
     private File featureModelsOutputDirectory;
 
     @Option(names = { "-g", "--group-id" }, description = "Overwriting the Group Id of the Model ID")
@@ -56,25 +56,25 @@ public class Main implements Runnable {
     @Option(names = { "-v", "--version" }, description = "Overwriting the Version of the Model ID")
     private String version;
 
-    @Option(names = { "-V", "--useProvidedVersion" }, description = "If flagged then the provided version will override any given version from Provisioning Model'")
+    @Option(names = { "-V", "--useProvidedVersion" }, description = "If flagged then the provided version will override any given version from Provisioning Model")
     private boolean useProvidedVersion;
 
-    @Option(names = { "-n", "--name" }, description = "Sets a general Name for all converted Models. This also means that the name is placed in the classifier")
+    @Option(names = { "-n", "--name" }, description = "Sets a General Name for all converted Models. This also means that the name is placed in the classifier")
     private String name;
 
-    @Option(names = { "-d", "--dropVariables" }, description = "All matching Variables (by name) in a Feature Model are dropped")
+    @Option(names = { "-d", "--dropVariable" }, description = "Variable (by name) in a Feature Model to be excluded (repeat for more)")
     private List<String> dropVariables;
 
-    @Option(names = { "-a", "--addFrameworkProperties" }, description = "Adds Framework Properties to Feature Models. Format: <Model Name>:<Property Name>=<value>")
+    @Option(names = { "-a", "--addFrameworkProperty" }, description = "Adds Framework Property to Feature Models. Format: <Model Name>:<Property Name>=<value> (repeat for more)")
     private List<String> addFrameworkProperties;
 
-    @Option(names = { "-D", "--noProvisioningModelName" }, description = "If flagged then the Provisioning Model Name is not added'")
+    @Option(names = { "-D", "--noProvisioningModelName" }, description = "If flagged then the Provisioning Model Name is not added")
     private boolean noProvisioningModelName;
 
-    @Option(names = { "-e", "--excludeBundles" }, description = "List of Bundles and Bundle Configurations to be excluded'")
+    @Option(names = { "-e", "--excludeBundle" }, description = "Bundle and/or Bundle Configuration to be excluded (repeat for more)")
     private List<String> excludeBundles;
 
-    @Option(names = { "-r", "--runModes" }, description = "List of Runmodes of the Feature Model. If set only configuration with that runmodes are used w/o a .runmdoes. suffix")
+    @Option(names = { "-r", "--runMode" }, description = "Runmode to add to this build (all no-runmodes are included by default, repeat for more)")
     private List<String> runModes;
 
     private Pattern pattern = Pattern.compile("^(.*?):(.*?)=(.*?)$");
