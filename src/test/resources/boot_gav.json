@@ -11,7 +11,7 @@
     },
     "bundles": [
         {
-            "id": "org.slf4j/slf4j-api/${slf4j.version}",
+            "id": "org.slf4j/slf4j-api/1.7.25",
             "start-level": 1
         },
         {
@@ -23,11 +23,11 @@
             "start-level": 1
         },
         {
-            "id": "org.slf4j/jcl-over-slf4j/${slf4j.version}",
+            "id": "org.slf4j/jcl-over-slf4j/1.7.25",
             "start-level": 1
         },
         {
-            "id": "org.slf4j/log4j-over-slf4j/${slf4j.version}",
+            "id": "org.slf4j/log4j-over-slf4j/1.7.25",
             "start-level": 1
         },
         {

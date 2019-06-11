@@ -68,8 +68,8 @@ public class FeatureToProvisioning {
 
     public static void convert(File inputFile, File outputFile, FeatureProvider fp, File ... additionalInputFiles) throws UncheckedIOException {
         if (outputFile.exists()) {
-            if (outputFile.lastModified() > inputFile.lastModified()) {
-                LOGGER.debug("Skipping the generation of {} as this file already exists and is newer.", outputFile);
+            if (outputFile.lastModified() >= inputFile.lastModified()) {
+                LOGGER.debug("Skipping the generation of {} as this file already exists and is not older.", outputFile);
                 return;
             }
         }

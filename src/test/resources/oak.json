@@ -11,27 +11,27 @@
             "start-level": 10
         },
         {
-            "id": "org.apache.jackrabbit/oak-core/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-core/1.6.8",
             "start-level": 15
         },
         {
-            "id": "org.apache.jackrabbit/oak-commons/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-commons/1.6.8",
             "start-level": 15
         },
         {
-            "id": "org.apache.jackrabbit/oak-lucene/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-lucene/1.6.8",
             "start-level": 15
         },
         {
-            "id": "org.apache.jackrabbit/oak-blob/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-blob/1.6.8",
             "start-level": 15
         },
         {
-            "id": "org.apache.jackrabbit/oak-jcr/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-jcr/1.6.8",
             "start-level": 15
         },
         {
-            "id": "org.apache.jackrabbit/oak-segment-tar/${oak.version}",
+            "id": "org.apache.jackrabbit/oak-segment-tar/1.6.8",
             "start-level": 15,
             "run-modes": "oak_tar"
         },

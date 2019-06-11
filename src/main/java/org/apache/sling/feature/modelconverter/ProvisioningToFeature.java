@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -81,15 +82,22 @@ public class ProvisioningToFeature {
             id = id.replaceAll("[:]","");
             id = bareFileName + "_" + id;
 
+            boolean noProvisioningModelName = getOption(options, "noProvisioningModelName", false);
+            if(noProvisioningModelName) {
+                // Provisioning Model Names create a conflict is provided in multiple PM files so it is dropped by request
+                f.getVariables().remove(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE);
+            }
+
             File outFile = new File(outDir, id + ".json");
             files.add(outFile);
 
             if (outFile.exists()) {
-                if (outFile.lastModified() > file.lastModified()) {
-                    LOGGER.debug("Skipping the generation of {} as this file already exists and is newer.", outFile);
+                // On a very fast computer the generated file might have the same timestamp if the file was previously copied
+                if (outFile.lastModified() >= file.lastModified()) {
+                    LOGGER.debug("Skipping the generation of {} as this file already exists and is not older.", outFile);
                     continue;
                 } else {
-                    LOGGER.debug("Deleting existing file {} as source is newer", outFile);
+                    LOGGER.debug("Deleting existing file {} as source is newer, modified: out: '{}', source: '{}'", outFile, outFile.lastModified(), file.lastModified());
                     outFile.delete();
                 }
             }
@@ -296,20 +304,65 @@ public class ProvisioningToFeature {
 
     private static void buildFromFeature(final Feature feature,
             final Map<String,String> variables,
+            final List<String> dropVariables,
             final Bundles bundles,
+            final List<String> excludeBundles,
             final Configurations configurations,
+            final List<String> currentRunModes,
             final Extensions extensions,
             final Map<String,String> properties) {
         for (Iterator<Map.Entry<String, String>> it = feature.getVariables().iterator(); it.hasNext(); ) {
             Entry<String, String> entry = it.next();
-            variables.put(entry.getKey(), entry.getValue());
+            boolean found = false;
+            if(dropVariables != null) {
+                for (String variableName : dropVariables) {
+                    // Look if variable is in the list of Variables to be dropped
+                    if (entry.getKey().equals(variableName)) {
+                        found = true;
+                    }
+                }
+            }
+            if(!found) { variables.put(entry.getKey(), entry.getValue()); }
         }
 
         Extension cpExtension = extensions.getByName(Extension.EXTENSION_NAME_CONTENT_PACKAGES);
         for(final RunMode runMode : feature.getRunModes() ) {
+            int runModelFilteringMode = 0; // Default behavior with no filtering
+            String[] runModeNames = runMode.getNames();
+            if(!currentRunModes.isEmpty()) {
+                if(runModeNames == null || runModeNames.length == 0) {
+                    runModelFilteringMode = 1; // No Runmode configured -> write as usual
+                } else {
+                    for(String runModeName: runModeNames) {
+                        if(currentRunModes.contains(runModeName)) {
+                            runModelFilteringMode = 2; // Matching Runmode -> write out w/o run mode suffix
+                        }
+                    }
+                    if(runModelFilteringMode != 2) {
+                        runModelFilteringMode = -1; // Ignore this runmode as it does not have a match
+                    }
+                }
+            }
+            if(runModelFilteringMode < 0) {
+                continue;
+            }
             for(final ArtifactGroup group : runMode.getArtifactGroups()) {
                 for(final Artifact artifact : group) {
-                    final ArtifactId id = ArtifactId.fromMvnUrl(artifact.toMvnUrl());
+                    ArtifactId id = ArtifactId.fromMvnUrl(artifact.toMvnUrl());
+                    String artifactId = id.getArtifactId();
+                    LOGGER.info("Check Artitfact Id: '{}' if excluded by: '{}'", artifactId, excludeBundles);
+                    if(excludeBundles.contains(artifactId)) {
+                        // If bundle is excluded then go to the next one
+                        continue;
+                    }
+                    String version = id.getVersion();
+                    if(version.startsWith("${") && version.endsWith("}")) {
+                        // Replace Variable with value if found
+                        String versionFromVariable = variables.get(version.substring(2, version.length() - 1));
+                        if (versionFromVariable != null && !versionFromVariable.isEmpty()) {
+                            id = new ArtifactId(id.getGroupId(), id.getArtifactId(), versionFromVariable, id.getClassifier(), id.getType());
+                        }
+                    }
                     final org.apache.sling.feature.Artifact newArtifact = new org.apache.sling.feature.Artifact(id);
 
                     for(final Map.Entry<String, String> entry : artifact.getMetadata().entrySet()) {
@@ -346,8 +399,13 @@ public class ProvisioningToFeature {
                     pid = ".." + pid.substring(1);
                 }
 
-                final String[] runModeNames = runMode.getNames();
-                if (runModeNames != null) {
+                LOGGER.info("Check Configuration Id: '{}' if excluded by: '{}'", pid, excludeBundles);
+                if(excludeBundles.contains(pid)) {
+                    // If configuration is excluded then go to the next one
+                    continue;
+                }
+
+                if (runModeNames != null && runModelFilteringMode != 2) {
                     pid = pid + ".runmodes." + String.join(".", runModeNames);
                     pid = pid.replaceAll("[:]", "..");
                 }
@@ -373,8 +431,7 @@ public class ProvisioningToFeature {
             }
 
             for(final Map.Entry<String, String> prop : runMode.getSettings()) {
-                String[] runModeNames = runMode.getNames();
-                if (runModeNames == null) {
+                if (runModeNames == null && runModelFilteringMode != 2) {
                     properties.put(prop.getKey(), prop.getValue());
                 } else {
                     properties.put(prop.getKey() + ".runmodes:" + String.join(",", runModeNames),
@@ -392,9 +449,12 @@ public class ProvisioningToFeature {
             Extension repoExtension = extensions.getByName(Extension.EXTENSION_NAME_REPOINIT);
 
             if ( repoExtension == null ) {
-                repoExtension = new Extension(ExtensionType.JSON, Extension.EXTENSION_NAME_REPOINIT, true);
+                // TODO: As of now only TEXT is accepted for Repoinit -> verify and adjust 
+//                repoExtension = new Extension(ExtensionType.JSON, Extension.EXTENSION_NAME_REPOINIT, true);
+                repoExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
                 extensions.add(repoExtension);
-                repoExtension.setJSON(textToJSON(repoinitText.toString()));
+//                repoExtension.setText(textToJSON(repoinitText.toString()));
+                repoExtension.setText(repoinitText.toString());
             } else {
                 throw new IllegalStateException("Repoinit sections already processed");
             }
@@ -428,29 +488,57 @@ public class ProvisioningToFeature {
 
         String groupId = getOption(options, "groupId", "generated");
         String version = getOption(options, "version", "1.0.0");
+        String nameOption = getOption(options, "name", "");
+        boolean useProvidedVersion = getOption(options, "useProvidedVersion", false);
+        List<String> dropVariables = getOption(options, "dropVariables", new ArrayList<>());
+        List<String> excludeBundles = getOption(options, "excludeBundles", new ArrayList<>());
+        Map<String,Map<String,String>> addFrameworkProperties = getOption(options, "addFrameworkProperties", new HashMap<String,Map<String, String>>());
+        List<String> runModes = getOption(options, "runModes", new ArrayList<>());
 
         for(final Feature feature : model.getFeatures() ) {
             final String idString;
             String name = feature.getName();
-            if ( name != null ) {
-                name = name.replaceAll("[:]", "");
+            if (name == null) { name = "feature"; }
+            name = name.replaceAll("[:]", "");
 
-                if (!name.equals(bareFileName)) {
-                    name = bareFileName + "_" + name;
-                }
-
-                if ( feature.getVersion() != null ) {
-                    idString = groupId + "/" + name + "/" + feature.getVersion();
-                } else {
-                    idString = groupId + "/" + name + "/" + version;
-                }
-            } else {
-                idString = groupId + "/feature/" + version;
+            if (!"feature".equals(name) && !name.equals(bareFileName)) {
+                name = bareFileName + "_" + name;
             }
+
+            // Todo: shouldn't a provided Version overwrite the Feature Version ?
+            if ( feature.getVersion() != null && !useProvidedVersion ) {
+                version = feature.getVersion();
+            }
+
+            // When providing a classifier a type must be provided and so we set it to 'slingfeature'
+            idString =
+                groupId + "/" +
+                (nameOption.isEmpty() ? name : nameOption) + "/" +
+                version +
+                (nameOption.isEmpty() ? "" :
+                    "/slingfeature/" + name );
             final org.apache.sling.feature.Feature f = new org.apache.sling.feature.Feature(ArtifactId.parse(idString));
             features.add(f);
 
-            buildFromFeature(feature, f.getVariables(), f.getBundles(), f.getConfigurations(), f.getExtensions(), f.getFrameworkProperties());
+            Map<String,String> variables = f.getVariables();
+            if(dropVariables != null) {
+                for (String variableName : dropVariables) {
+                    if (variables.containsKey(variableName)) {
+                        variables.remove(variableName);
+                    }
+                }
+            }
+            Map<String,String> frameworkProperties = f.getFrameworkProperties();
+            String simpleName = feature.getName().replaceAll("[:]", "");
+            if(addFrameworkProperties.containsKey(simpleName)) {
+                Map<String,String> modelFeatureProperties = addFrameworkProperties.get(simpleName);
+                if(modelFeatureProperties != null) {
+                    for(Entry<String,String> entry: modelFeatureProperties.entrySet()) {
+                        frameworkProperties.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            buildFromFeature(feature, variables, dropVariables, f.getBundles(), excludeBundles, f.getConfigurations(), runModes, f.getExtensions(), frameworkProperties);
 
             if (!f.getId().getArtifactId().equals(feature.getName())) {
                 f.getVariables().put(FeatureToProvisioning.PROVISIONING_MODEL_NAME_VARIABLE, feature.getName());

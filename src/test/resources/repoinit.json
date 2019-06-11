@@ -21,7 +21,7 @@
             "references":"model@repoinit:context:/resources/provisioning/model.txt"
         }
     },
-    "repoinit:JSON|true": [
+    "repoinit:TEXT|true": [
         "# general",
         "create path (sling:OrderedFolder) /content",
         "set ACL for everyone",
