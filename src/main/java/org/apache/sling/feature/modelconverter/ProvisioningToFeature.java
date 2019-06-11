@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,9 +40,9 @@ import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.io.file.ArtifactHandler;
-import org.apache.sling.feature.io.file.ArtifactManager;
-import org.apache.sling.feature.io.file.ArtifactManagerConfig;
+import org.apache.sling.feature.io.artifacts.ArtifactHandler;
+import org.apache.sling.feature.io.artifacts.ArtifactManager;
+import org.apache.sling.feature.io.artifacts.ArtifactManagerConfig;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
@@ -127,7 +130,7 @@ public class ProvisioningToFeature {
         Model model = null;
         for(final File initFile : files) {
             try {
-                model = processModel(model, initFile, includeModelInfo, variableResolver);
+                model = processModel(model, initFile.toURI().toURL(), includeModelInfo, variableResolver);
             } catch ( final IOException iae) {
                 LOGGER.error("Unable to read provisioning model {} : {}", initFile, iae.getMessage(), iae);
                 System.exit(1);
@@ -170,7 +173,7 @@ public class ProvisioningToFeature {
      * @throws IOException If reading fails
      */
     private static Model processModel(Model model,
-            File modelFile, boolean includeModelInfo) throws IOException {
+            URL modelFile, boolean includeModelInfo) throws IOException {
         return processModel(model, modelFile, includeModelInfo,
             new ResolverOptions().variableResolver(new VariableResolver() {
                 @Override
@@ -182,7 +185,7 @@ public class ProvisioningToFeature {
     }
 
     private static Model processModel(Model model,
-            File modelFile, boolean includeModelInfo, ResolverOptions options) throws IOException {
+            URL modelFile, boolean includeModelInfo, ResolverOptions options) throws IOException {
         LOGGER.info("- reading model {}", modelFile);
 
         final Model nextModel = readProvisioningModel(modelFile);
@@ -206,14 +209,14 @@ public class ProvisioningToFeature {
                                     "txt");
 
                             final ArtifactHandler handler = mgr.getArtifactHandler(correctedId.toMvnUrl());
-                            model = processModel(model, handler.getFile(), includeModelInfo);
+                            model = processModel(model, handler.getLocalURL(), includeModelInfo);
 
                             removeList.add(a);
                         } else {
                             final org.apache.sling.provisioning.model.Artifact realArtifact = nextModel.getFeature(feature.getName()).getRunMode(runMode.getNames()).getArtifactGroup(group.getStartLevel()).search(a);
 
                             if ( includeModelInfo ) {
-                                realArtifact.getMetadata().put("model-filename", modelFile.getName());
+                                realArtifact.getMetadata().put("model-filename", modelFile.getPath().substring(modelFile.getPath().lastIndexOf("/") + 1));
                             }
                             if ( runMode.getNames() != null ) {
                                 realArtifact.getMetadata().put("runmodes", String.join(",", runMode.getNames()));
@@ -238,10 +241,10 @@ public class ProvisioningToFeature {
     /**
      * Read the provisioning model
      */
-    private static Model readProvisioningModel(final File file)
+    private static Model readProvisioningModel(final URL file)
     throws IOException {
-        try (final FileReader is = new FileReader(file)) {
-            return ModelReader.read(is, file.getAbsolutePath());
+        try (final Reader is = new InputStreamReader(file.openStream(), "UTF-8")) {
+            return ModelReader.read(is, file.getPath());
         }
     }
 

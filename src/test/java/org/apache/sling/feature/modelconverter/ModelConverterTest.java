@@ -22,9 +22,9 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.builder.FeatureProvider;
-import org.apache.sling.feature.io.file.ArtifactHandler;
-import org.apache.sling.feature.io.file.ArtifactManager;
-import org.apache.sling.feature.io.file.ArtifactManagerConfig;
+import org.apache.sling.feature.io.artifacts.ArtifactHandler;
+import org.apache.sling.feature.io.artifacts.ArtifactManager;
+import org.apache.sling.feature.io.artifacts.ArtifactManagerConfig;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.ArtifactGroup;
@@ -50,9 +50,11 @@ import org.mockito.stubbing.Answer;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,9 +96,9 @@ public class ModelConverterTest {
         featureProvider =
             id -> {
                 try {
-                    File file = artifactManager.getArtifactHandler(id.toMvnUrl()).getFile();
-                    try (Reader reader = new FileReader(file)) {
-                        return FeatureJSONReader.read(reader, file.toURI().toURL().toString());
+                    URL file = artifactManager.getArtifactHandler(id.toMvnUrl()).getLocalURL();
+                    try (Reader reader = new InputStreamReader(file.openStream(), "UTF-8")) {
+                        return FeatureJSONReader.read(reader, file.toString());
                     }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -215,9 +217,9 @@ public class ModelConverterTest {
                 String url = in.getArgument(0).toString();
 
                 if (url.endsWith("simple_inherits.json")) {
-                    return new ArtifactHandler(url, new File(url));
+                    return new ArtifactHandler(url, new URL(url));
                 } else if ("mvn:generated/simple/1.0.0".equals(url)) {
-                    return new ArtifactHandler(url, new File(getClass().getResource("/simple.json").toURI()));
+                    return new ArtifactHandler(url, getClass().getResource("/simple.json"));
                 }
                 return null;
             }
