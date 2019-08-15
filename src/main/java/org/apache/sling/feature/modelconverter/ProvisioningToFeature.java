@@ -385,7 +385,7 @@ public class ProvisioningToFeature {
                                 startLevel = 20;
                             }
                         }
-                        newArtifact.getMetadata().put("start-level", String.valueOf(startLevel));
+                        newArtifact.getMetadata().put("start-order", String.valueOf(startLevel));
 
                         bundles.add(newArtifact);
                     }
