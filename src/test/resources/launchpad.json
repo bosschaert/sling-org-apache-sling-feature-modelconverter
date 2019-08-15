@@ -6,12 +6,12 @@
   "bundles":[
     {
       "id":"org.apache.sling:org.apache.sling.launchpad.base:5.6.10-2.6.26",
-      "start-level":"20"
+      "start-order":"20"
     },
     {
       "id":"org.apache.sling:org.apache.sling.commons.osgi:2.4.0",
       "run-modes":":something",
-      "start-level":"20"
+      "start-order":"20"
     }
   ],
   "configurations":{

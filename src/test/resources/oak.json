@@ -8,46 +8,46 @@
     "bundles": [
         {
             "id": "org.apache.felix/org.apache.felix.jaas/1.0.2",
-            "start-level": 10
+            "start-order": 10
         },
         {
             "id": "org.apache.jackrabbit/oak-core/1.6.8",
-            "start-level": 15
+            "start-order": 15
         },
         {
             "id": "org.apache.jackrabbit/oak-commons/1.6.8",
-            "start-level": 15
+            "start-order": 15
         },
         {
             "id": "org.apache.jackrabbit/oak-lucene/1.6.8",
-            "start-level": 15
+            "start-order": 15
         },
         {
             "id": "org.apache.jackrabbit/oak-blob/1.6.8",
-            "start-level": 15
+            "start-order": 15
         },
         {
             "id": "org.apache.jackrabbit/oak-jcr/1.6.8",
-            "start-level": 15
+            "start-order": 15
         },
         {
             "id": "org.apache.jackrabbit/oak-segment-tar/1.6.8",
-            "start-level": 15,
+            "start-order": 15,
             "run-modes": "oak_tar"
         },
         {
             "id": "org.mongodb/mongo-java-driver/3.4.1",
-            "start-level": 15,
+            "start-order": 15,
             "run-modes": "oak_mongo"
         },
         {
             "id": "com.h2database/h2-mvstore/1.4.196",
-            "start-level": 15,
+            "start-order": 15,
             "run-modes": "oak_mongo"
         },
         {
             "id": "org.apache.sling/org.apache.sling.jcr.oak.server/1.1.4",
-            "start-level": 16
+            "start-order": 16
         }
     ],
     "configurations": {

@@ -162,7 +162,8 @@ public class FeatureToProvisioning {
                 bundleRunModes = getRunModes(bundle);
             }
 
-            int startLevel;
+            int startLevel = bundle.getStartOrder();
+
             String sl = bundle.getMetadata().get("start-level");
             // special handling for :boot or :launchpad
             if ( sl != null && sl.startsWith(":") ) {
@@ -178,10 +179,12 @@ public class FeatureToProvisioning {
                 }
                 addFeat.getOrCreateRunMode(null).getOrCreateArtifactGroup(0).add(newBundle);
             } else {
-                if (sl != null) {
-                    startLevel = Integer.parseInt(sl);
-                } else {
-                    startLevel = 20;
+                if (startLevel == 0) {
+                    if (sl != null) {
+                        startLevel = Integer.parseInt(sl);
+                    } else {
+                        startLevel = 20;
+                    }
                 }
 
                 f.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
