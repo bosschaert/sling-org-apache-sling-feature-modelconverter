@@ -41,11 +41,8 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Bundles;
-import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.builder.BuilderContext;
 import org.apache.sling.feature.builder.FeatureBuilder;
 import org.apache.sling.feature.builder.FeatureProvider;
@@ -54,6 +51,7 @@ import org.apache.sling.provisioning.model.Artifact;
 import org.apache.sling.provisioning.model.Configuration;
 import org.apache.sling.provisioning.model.Feature;
 import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.RunMode;
 import org.apache.sling.provisioning.model.Section;
 import org.apache.sling.provisioning.model.io.ModelWriter;
 import org.slf4j.Logger;
@@ -80,11 +78,11 @@ public class FeatureToProvisioning {
         }
 
         Object featureNameVar = feature.getVariables().remove(PROVISIONING_MODEL_NAME_VARIABLE);
-        String featureName;
+        String provModelName;
         if (featureNameVar instanceof String) {
-            featureName = (String) featureNameVar;
+            provModelName = (String) featureNameVar;
         } else {
-            featureName = feature.getId().getArtifactId();
+            provModelName = feature.getId().getArtifactId();
         }
 
         String runMode = feature.getVariables().remove(PROVISIONING_RUNMODES);
@@ -93,9 +91,7 @@ public class FeatureToProvisioning {
             runModes = runMode.split(",");
         }
 
-        Feature newFeature = new Feature(featureName);
-        convert(newFeature, feature.getVariables(), feature.getBundles(), feature.getConfigurations(),
-                feature.getFrameworkProperties(), feature.getExtensions(), outputFile.getAbsolutePath(), runModes);
+        convert(provModelName, feature, inputFile.getName(), outputFile.getAbsolutePath(), runModes);
     }
 
     static org.apache.sling.feature.Feature getFeature(final File file) throws UncheckedIOException {
@@ -118,22 +114,33 @@ public class FeatureToProvisioning {
         return FeatureBuilder.assemble(feature, bc);
     }
 
-    private static void convert(Feature f, Map<String,String> variables, Bundles bundles, Configurations configurations, Map<String,String> frameworkProps,
-            Extensions extensions, String outputFile, String [] runModes) {
+    /**
+     * Convert a feature to a provisioning model
+     *
+     * @param provModelName The name of the prov model
+     * @param feature       The feature model to convert
+     * @param outputFile    The output file to write the prov model to
+     * @param runModes      The run modes of the feature model
+     */
+    private static void convert(String provModelName, org.apache.sling.feature.Feature feature, String featureFileName,
+            String outputFile,
+            String[] runModes) {
+        Feature provModel = new Feature(provModelName);
+
         final Map<String, Feature> additionalFeatures = new HashMap<>();
 
         if (runModes != null && runModes.length == 0) {
             runModes = null;
         }
-        org.apache.sling.provisioning.model.KeyValueMap<String> vars = f.getVariables();
-        for (Map.Entry<String, String> entry : variables.entrySet()) {
+        org.apache.sling.provisioning.model.KeyValueMap<String> vars = provModel.getVariables();
+        for (Map.Entry<String, String> entry : feature.getVariables().entrySet()) {
             vars.put(entry.getKey(), entry.getValue());
         }
 
         Map<org.apache.sling.feature.Configuration, org.apache.sling.feature.Artifact> configBundleMap = new HashMap<>();
 
         // bundles
-        for(final org.apache.sling.feature.Artifact bundle : bundles) {
+        for (final org.apache.sling.feature.Artifact bundle : feature.getBundles()) {
             final ArtifactId id = bundle.getId();
             final Artifact newBundle = new Artifact(id.getGroupId(), id.getArtifactId(), id.getVersion(), id.getClassifier(), id.getType());
 
@@ -168,7 +175,9 @@ public class FeatureToProvisioning {
             // special handling for :boot or :launchpad
             if ( sl != null && sl.startsWith(":") ) {
                 if ( bundleRunModes != null ) {
-                    LOGGER.error("Unable to convert feature {}. Run modes must not be defined for bundles with start-level {}", f.getName(), sl);
+                    LOGGER.error(
+                            "Unable to convert feature {}. Run modes must not be defined for bundles with start-level {}",
+                            provModel.getName(), sl);
                     System.exit(1);
                 }
 
@@ -187,12 +196,12 @@ public class FeatureToProvisioning {
                     }
                 }
 
-                f.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
+                provModel.getOrCreateRunMode(bundleRunModes).getOrCreateArtifactGroup(startLevel).add(newBundle);
             }
         }
 
         // configurations
-        for(final org.apache.sling.feature.Configuration cfg : configurations) {
+        for (final org.apache.sling.feature.Configuration cfg : feature.getConfigurations()) {
             final Configuration c;
 
             List<String> runModeList = new ArrayList<>();
@@ -219,11 +228,11 @@ public class FeatureToProvisioning {
                 if (cfgRunModes.length == 0)
                     cfgRunModes = null;
             }
-            f.getOrCreateRunMode(cfgRunModes).getConfigurations().add(c);
+            provModel.getOrCreateRunMode(cfgRunModes).getConfigurations().add(c);
         }
 
         // framework properties
-        for(final Map.Entry<String, String> prop : frameworkProps.entrySet()) {
+        for (final Map.Entry<String, String> prop : feature.getFrameworkProperties().entrySet()) {
             String key = prop.getKey();
             int idx = key.indexOf(".runmodes:");
 
@@ -231,14 +240,14 @@ public class FeatureToProvisioning {
                 String rm = key.substring(idx + ".runmodes:".length());
                 String[] runmodes = rm.split(",");
                 key = key.substring(0, idx);
-                f.getOrCreateRunMode(runmodes).getSettings().put(key, prop.getValue());
+                provModel.getOrCreateRunMode(runmodes).getSettings().put(key, prop.getValue());
             } else {
-                f.getOrCreateRunMode(null).getSettings().put(key, prop.getValue());
+                provModel.getOrCreateRunMode(null).getSettings().put(key, prop.getValue());
             }
         }
 
         // extensions: content packages and repoinit
-        for(final Extension ext : extensions) {
+        for (final Extension ext : feature.getExtensions()) {
             if (Extension.EXTENSION_NAME_CONTENT_PACKAGES.equals(ext.getName())) {
                 for(final org.apache.sling.feature.Artifact cp : ext.getArtifacts() ) {
                     String[] extRunModes = runModes;
@@ -253,13 +262,13 @@ public class FeatureToProvisioning {
                             newCP.getMetadata().put(prop.getKey(), prop.getValue());
                         }
                     }
-                    f.getOrCreateRunMode(extRunModes).getOrCreateArtifactGroup(20).add(newCP);
+                    provModel.getOrCreateRunMode(extRunModes).getOrCreateArtifactGroup(20).add(newCP);
                 }
 
             } else if (Extension.EXTENSION_NAME_REPOINIT.equals(ext.getName())) {
-                final Section section = new Section("repoinit");
+                final String repoinitContents;
                 if (ext.getType() == ExtensionType.TEXT) {
-                    section.setContents(ext.getText());
+                    repoinitContents = ext.getText();
                 } else if (ext.getType() == ExtensionType.JSON) {
                     JsonReader reader = Json.createReader(new StringReader(ext.getJSON()));
                     JsonArray arr = reader.readArray();
@@ -270,9 +279,31 @@ public class FeatureToProvisioning {
                             sb.append('\n');
                         }
                     }
-                    section.setContents(sb.toString());
+                    repoinitContents = sb.toString();
+                } else {
+                    repoinitContents = null;
+                    LOGGER.error("Unable to convert repoinit extension with artifacts");
+                    System.exit(1);
                 }
-                f.getAdditionalSections().add(section);
+
+                if (runModes == null) {
+                    final Section section = new Section("repoinit");
+                    section.setContents(repoinitContents);
+                    provModel.getAdditionalSections().add(section);
+
+                } else {
+                    // create a factory configuration with repoinit
+                    // create an name from the featureFileName
+                    int lastDot = featureFileName.lastIndexOf('.');
+                    String name = lastDot == -1 ? featureFileName : featureFileName.substring(0, lastDot);
+                    name = name.replace('-', '_');
+
+                    final RunMode runMode = provModel.getOrCreateRunMode(runModes);
+                    final Configuration repoinitCfg = new Configuration(name,
+                            "org.apache.sling.jcr.repoinit.RepositoryInitializer");
+                    repoinitCfg.getProperties().put("scripts", repoinitContents);
+                    runMode.getConfigurations().add(repoinitCfg);
+                }
             } else if ( ext.isRequired() ) {
                 LOGGER.error("Unable to convert required extension {}", ext.getName());
                 System.exit(1);
@@ -282,7 +313,7 @@ public class FeatureToProvisioning {
         final String out = outputFile;
         final File file = new File(out);
         final Model m = new Model();
-        m.getFeatures().add(f);
+        m.getFeatures().add(provModel);
         for(final Feature addFeat : additionalFeatures.values()) {
             m.getFeatures().add(addFeat);
         }
