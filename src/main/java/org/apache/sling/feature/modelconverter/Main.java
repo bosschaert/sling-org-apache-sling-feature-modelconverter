@@ -19,7 +19,6 @@ package org.apache.sling.feature.modelconverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,7 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -35,9 +35,11 @@ import picocli.CommandLine.Option;
 @Command(
     name = "pm2fm",
     description = "Apache Sling Provisioning Model to Sling Feature Model converter",
-    footer = "Copyright(c) 2019 The Apache Software Foundation."
+    footer = "Copyright(c) 2019-2020 The Apache Software Foundation."
 )
 public class Main implements Runnable {
+
+    public static final String PACKAGING_FEATURE = "slingosgifeature";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 

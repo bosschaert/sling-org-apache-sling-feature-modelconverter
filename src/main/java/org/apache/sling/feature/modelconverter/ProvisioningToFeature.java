@@ -17,7 +17,6 @@
 package org.apache.sling.feature.modelconverter;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -204,6 +203,7 @@ public class ProvisioningToFeature {
                 for(final ArtifactGroup group : runMode.getArtifactGroups()) {
                     final List<org.apache.sling.provisioning.model.Artifact> removeList = new ArrayList<>();
                     for(final org.apache.sling.provisioning.model.Artifact a : group) {
+                        // slingstart and slingfeature are extensions owned by the slingstart maven plugin
                         if ( "slingstart".equals(a.getType())
                              || "slingfeature".equals(a.getType())) {
 
@@ -213,7 +213,7 @@ public class ProvisioningToFeature {
                             final ArtifactId correctedId = new ArtifactId(a.getGroupId(),
                                     a.getArtifactId(),
                                     a.getVersion(),
-                                    "slingstart".equals(a.getType()) ? "slingfeature" : a.getClassifier(),
+                                    "slingstart".equals(a.getType()) ? Main.PACKAGING_FEATURE : a.getClassifier(),
                                     "txt");
 
                             final ArtifactHandler handler = mgr.getArtifactHandler(correctedId.toMvnUrl());
@@ -449,7 +449,7 @@ public class ProvisioningToFeature {
             Extension repoExtension = extensions.getByName(Extension.EXTENSION_NAME_REPOINIT);
 
             if ( repoExtension == null ) {
-                // TODO: As of now only TEXT is accepted for Repoinit -> verify and adjust 
+                // TODO: As of now only TEXT is accepted for Repoinit -> verify and adjust
 //                repoExtension = new Extension(ExtensionType.JSON, Extension.EXTENSION_NAME_REPOINIT, true);
                 repoExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
                 extensions.add(repoExtension);
@@ -510,13 +510,13 @@ public class ProvisioningToFeature {
                 version = feature.getVersion();
             }
 
-            // When providing a classifier a type must be provided and so we set it to 'slingfeature'
+            // When providing a classifier a type must be provided and so we set it to 'slingosgifeature'
             idString =
                 groupId + "/" +
                 (nameOption.isEmpty() ? name : nameOption) + "/" +
                 version +
                 (nameOption.isEmpty() ? "" :
-                    "/slingfeature/" + name );
+                    "/" + Main.PACKAGING_FEATURE + "/" + name );
             final org.apache.sling.feature.Feature f = new org.apache.sling.feature.Feature(ArtifactId.parse(idString));
             features.add(f);
 
