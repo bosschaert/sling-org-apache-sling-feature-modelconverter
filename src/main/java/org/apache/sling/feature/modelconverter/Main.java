@@ -65,16 +65,16 @@ public class Main implements Runnable {
     private String name;
 
     @Option(names = { "-d", "--dropVariable" }, description = "Variable (by name) in a Feature Model to be excluded (repeat for more)")
-    private List<String> dropVariables;
+    private List<String> dropVariables = new ArrayList<>();
 
     @Option(names = { "-a", "--addFrameworkProperty" }, description = "Adds Framework Property to Feature Models. Format: <Model Name>:<Property Name>=<value> (repeat for more)")
-    private List<String> addFrameworkProperties;
+    private List<String> addFrameworkProperties = new ArrayList<>();
 
     @Option(names = { "-D", "--noProvisioningModelName" }, description = "If flagged then the Provisioning Model Name is not added")
     private boolean noProvisioningModelName;
 
     @Option(names = { "-e", "--excludeBundle" }, description = "Bundle and/or Bundle Configuration to be excluded (repeat for more)")
-    private List<String> excludeBundles;
+    private List<String> excludeBundles = new ArrayList<>();
 
     @Option(names = { "-r", "--runMode" }, description = "Runmode to add to this build (all no-runmodes are included by default, repeat for more)")
     private List<String> runModes;
@@ -122,6 +122,7 @@ public class Main implements Runnable {
                     modelMap.put(propName, propValue);
                 }
             }
+            
             options.put("addFrameworkProperties", frameworkPropertiesMap);
             options.put("excludeBundles", excludeBundles);
             LOGGER.info("Excluded Bundles: '{}'", excludeBundles);
