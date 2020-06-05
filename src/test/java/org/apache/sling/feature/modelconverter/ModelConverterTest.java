@@ -705,7 +705,6 @@ public class ModelConverterTest {
         for (int i=0; i<al1.size(); i++) {
             Artifact a1 = al1.get(i);
             String a1Version = a1.getVersion();
-            String resolvedVersion = a1Version;
             Artifact a1Resolved = null;
             if(a1Version.startsWith("${") && a1Version.endsWith("}")) {
                 String variableName = a1Version.substring(2, a1Version.length() - 1);
@@ -720,7 +719,6 @@ public class ModelConverterTest {
                 Artifact a2 = it.next();
 //                LOGGER.debug("Check Artifacts, first: '{}', second: '{}'", a1, a2);
                 String a2Version = a2.getVersion();
-                String resolvedVersion2 = a2Version;
                 Artifact a2Resolved = null;
                 if(a2Version.startsWith("${") && a2Version.endsWith("}")) {
                     String variableName = a2Version.substring(2, a2Version.length() - 1);
@@ -786,7 +784,7 @@ public class ModelConverterTest {
 
             assertEquals(ex.getType(), ac.getType());
             assertEquals(ex.getName(), ac.getName());
-            assertEquals(ex.isRequired(), ac.isRequired());
+            assertEquals(ex.getState(), ac.getState());
 
             if (ex.getType() == ExtensionType.TEXT) {
                 String exTxt;

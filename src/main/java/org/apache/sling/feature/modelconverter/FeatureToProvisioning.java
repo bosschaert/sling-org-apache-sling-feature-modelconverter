@@ -42,6 +42,7 @@ import javax.json.JsonValue;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.builder.BuilderContext;
 import org.apache.sling.feature.builder.FeatureBuilder;
@@ -304,7 +305,7 @@ public class FeatureToProvisioning {
                     repoinitCfg.getProperties().put("scripts", repoinitContents);
                     runMode.getConfigurations().add(repoinitCfg);
                 }
-            } else if ( ext.isRequired() ) {
+            } else if ( ext.getState() == ExtensionState.REQUIRED ) {
                 LOGGER.error("Unable to convert required extension {}", ext.getName());
                 System.exit(1);
             }

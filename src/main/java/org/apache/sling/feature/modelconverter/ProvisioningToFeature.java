@@ -38,6 +38,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.io.artifacts.ArtifactHandler;
@@ -372,7 +373,7 @@ public class ProvisioningToFeature {
                     if ( newArtifact.getId().getType().equals("zip") ) {
                         if ( cpExtension == null ) {
                             cpExtension = new Extension(ExtensionType.ARTIFACTS,
-                                    Extension.EXTENSION_NAME_CONTENT_PACKAGES, true);
+                                    Extension.EXTENSION_NAME_CONTENT_PACKAGES, ExtensionState.REQUIRED);
                             extensions.add(cpExtension);
                         }
                         cpExtension.getArtifacts().add(newArtifact);
@@ -449,38 +450,13 @@ public class ProvisioningToFeature {
             Extension repoExtension = extensions.getByName(Extension.EXTENSION_NAME_REPOINIT);
 
             if ( repoExtension == null ) {
-                // TODO: As of now only TEXT is accepted for Repoinit -> verify and adjust
-//                repoExtension = new Extension(ExtensionType.JSON, Extension.EXTENSION_NAME_REPOINIT, true);
-                repoExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
+                repoExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
                 extensions.add(repoExtension);
-//                repoExtension.setText(textToJSON(repoinitText.toString()));
                 repoExtension.setText(repoinitText.toString());
             } else {
                 throw new IllegalStateException("Repoinit sections already processed");
             }
         }
-}
-
-    private static String textToJSON(String text) {
-        text = text.replace('\t', ' ');
-        String[] lines = text.split("[\n]");
-
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-
-        boolean first = true;
-        for (String t : lines) {
-            if (first)
-                first = false;
-            else
-                sb.append(',');
-
-            sb.append('"');
-            sb.append(t);
-            sb.append('"');
-        }
-        sb.append(']');
-        return sb.toString();
     }
 
     private static List<org.apache.sling.feature.Feature> buildFeatures(Model model, String bareFileName, Map<String, Object> options) {
