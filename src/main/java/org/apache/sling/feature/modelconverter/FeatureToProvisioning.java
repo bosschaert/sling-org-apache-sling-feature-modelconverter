@@ -65,7 +65,13 @@ public class FeatureToProvisioning {
     static final String PROVISIONING_MODEL_NAME_VARIABLE = "provisioning.model.name";
     static final String PROVISIONING_RUNMODES = "provisioning.runmodes";
 
-    public static void convert(File inputFile, File outputFile, FeatureProvider fp, File ... additionalInputFiles) throws UncheckedIOException {
+    public static void convert(File inputFile, File outputFile, FeatureProvider fp, File ... additionalInputFiles) {
+        convert(inputFile, outputFile, fp, f -> f, additionalInputFiles);
+    }
+
+    public static void convert(File inputFile, File outputFile, FeatureProvider fp,
+            Function<org.apache.sling.feature.Feature, org.apache.sling.feature.Feature> featureProcessor,
+            File ... additionalInputFiles) {
         if (outputFile.exists()) {
             if (outputFile.lastModified() >= inputFile.lastModified()) {
                 LOGGER.debug("Skipping the generation of {} as this file already exists and is not older.", outputFile);
@@ -92,7 +98,8 @@ public class FeatureToProvisioning {
             runModes = runMode.split(",");
         }
 
-        convert(provModelName, feature, inputFile.getName(), outputFile.getAbsolutePath(), runModes);
+        org.apache.sling.feature.Feature processedFeature = featureProcessor.apply(feature);
+        convert(provModelName, processedFeature, inputFile.getName(), outputFile.getAbsolutePath(), runModes);
     }
 
     static org.apache.sling.feature.Feature getFeature(final File file) throws UncheckedIOException {
